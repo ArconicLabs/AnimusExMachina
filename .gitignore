@@ -1,0 +1,8 @@
+# Unreal Engine Plugin - Generated/Build artifacts
+Binaries/
+Intermediate/
+DerivedDataCache/
+
+# IDE
+.vs/
+.idea/
