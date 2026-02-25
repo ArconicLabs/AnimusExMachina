@@ -1,8 +1,10 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright ArconicLabs. All Rights Reserved.
 
 #pragma once
 
 #include "Modules/ModuleManager.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogAxM, Log, All);
 
 class FAnimusExMachinaModule : public IModuleInterface
 {
