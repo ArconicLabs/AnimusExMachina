@@ -28,14 +28,15 @@ EStateTreeRunStatus FAxMGlobalTask_Perception::Tick(
 {
 	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 
-	if (!InstanceData.Controller)
+	AAxMAIController* AxMController = Cast<AAxMAIController>(InstanceData.Controller);
+	if (!AxMController)
 	{
 		return EStateTreeRunStatus::Running;
 	}
 
 	// read cached perception data from the controller's delegate results
-	InstanceData.TargetActor = InstanceData.Controller->GetCachedTargetActor();
-	InstanceData.LastKnownLocation = InstanceData.Controller->GetCachedLastKnownLocation();
+	InstanceData.TargetActor = AxMController->GetCachedTargetActor();
+	InstanceData.LastKnownLocation = AxMController->GetCachedLastKnownLocation();
 
 	return EStateTreeRunStatus::Running;
 }

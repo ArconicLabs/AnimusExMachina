@@ -10,7 +10,7 @@
 #include "StateTreeTaskBase.h"
 #include "AxMGlobalTask_Perception.generated.h"
 
-class AAxMAIController;
+class AAIController;
 
 /**
  *  Instance data for the perception global task.
@@ -20,9 +20,9 @@ struct FAxMGlobalTask_PerceptionInstanceData
 {
 	GENERATED_BODY()
 
-	/** The AxM AI Controller that owns the perception component */
+	/** AI Controller (cast to AAxMAIController internally to read cached perception) */
 	UPROPERTY(EditAnywhere, Category = "Context")
-	TObjectPtr<AAxMAIController> Controller;
+	TObjectPtr<AAIController> Controller;
 
 	/** [Output] The currently perceived target actor (null if none) */
 	UPROPERTY(EditAnywhere, Category = "Output")
