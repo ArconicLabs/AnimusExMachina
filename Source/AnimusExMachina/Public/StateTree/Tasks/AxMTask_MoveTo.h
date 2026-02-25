@@ -1,7 +1,7 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
 // StateTree task that navigates the AI pawn to a target actor or location
-// using AAIController::MoveTo, completing via the move completed delegate.
+// using AAIController::MoveTo, completing via PathFollowingComponent delegate.
 
 #pragma once
 

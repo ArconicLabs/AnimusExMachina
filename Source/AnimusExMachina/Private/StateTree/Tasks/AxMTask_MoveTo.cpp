@@ -4,6 +4,7 @@
 #include "AIController.h"
 #include "StateTreeExecutionContext.h"
 #include "StateTreeExecutionTypes.h"
+#include "StateTreeAsyncExecutionContext.h"
 #include "Navigation/PathFollowingComponent.h"
 
 EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
@@ -48,21 +49,25 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 		return EStateTreeRunStatus::Failed;
 	}
 
-	// bind move completed delegate for async completion
-	InstanceData.Controller->ReceiveMoveCompleted.AddLambda(
-		[WeakContext = Context.MakeWeakExecutionContext()](
-			FAIRequestID RequestID, EPathFollowingResult::Type MoveResult)
-		{
-			if (MoveResult == EPathFollowingResult::Success)
+	// bind to the path following component's non-dynamic delegate for async completion
+	UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
+	if (PathComp)
+	{
+		PathComp->OnRequestFinished.AddLambda(
+			[WeakContext = Context.MakeWeakExecutionContext()](
+				FAIRequestID RequestID, const FPathFollowingResult& MoveResult)
 			{
-				WeakContext.FinishTask(EStateTreeFinishTaskType::Succeeded);
+				if (MoveResult.IsSuccess())
+				{
+					WeakContext.FinishTask(EStateTreeFinishTaskType::Succeeded);
+				}
+				else
+				{
+					WeakContext.FinishTask(EStateTreeFinishTaskType::Failed);
+				}
 			}
-			else
-			{
-				WeakContext.FinishTask(EStateTreeFinishTaskType::Failed);
-			}
-		}
-	);
+		);
+	}
 
 	return EStateTreeRunStatus::Running;
 }
@@ -81,7 +86,13 @@ void FAxMTask_MoveTo::ExitState(
 	if (InstanceData.Controller)
 	{
 		InstanceData.Controller->StopMovement();
-		InstanceData.Controller->ReceiveMoveCompleted.Clear();
+
+		// clean up the delegate binding
+		UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
+		if (PathComp)
+		{
+			PathComp->OnRequestFinished.RemoveAll(this);
+		}
 	}
 }
 
