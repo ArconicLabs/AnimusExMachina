@@ -6,7 +6,7 @@
 bool FAxMCondition_IsInAttackRange::TestCondition(FStateTreeExecutionContext& Context) const
 {
 	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
-	return InstanceData.bIsInAttackRange;
+	return InstanceData.bInvert ? !InstanceData.bIsInAttackRange : InstanceData.bIsInAttackRange;
 }
 
 #if WITH_EDITOR

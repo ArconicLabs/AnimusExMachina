@@ -20,8 +20,11 @@ struct FAxMCondition_IsInAttackRangeInstanceData
 	/** Whether the target is in attack range (bound from TargetTracking output) */
 	UPROPERTY(EditAnywhere, Category = "Input")
 	bool bIsInAttackRange = false;
+
+	/** If true, the condition passes when NOT in attack range */
+	UPROPERTY(EditAnywhere, Category = "Parameter")
+	bool bInvert = false;
 };
-STATETREE_POD_INSTANCEDATA(FAxMCondition_IsInAttackRangeInstanceData);
 
 /**
  *  StateTree condition that returns the value of a bound IsInAttackRange bool.

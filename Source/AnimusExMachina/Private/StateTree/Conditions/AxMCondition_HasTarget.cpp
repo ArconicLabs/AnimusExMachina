@@ -6,7 +6,8 @@
 bool FAxMCondition_HasTarget::TestCondition(FStateTreeExecutionContext& Context) const
 {
 	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
-	return IsValid(InstanceData.TargetActor);
+	const bool bHasTarget = IsValid(InstanceData.TargetActor);
+	return InstanceData.bInvert ? !bHasTarget : bHasTarget;
 }
 
 #if WITH_EDITOR

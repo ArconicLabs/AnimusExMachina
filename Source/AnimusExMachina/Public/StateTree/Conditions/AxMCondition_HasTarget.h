@@ -20,6 +20,10 @@ struct FAxMCondition_HasTargetInstanceData
 	/** Target actor to check (bound from Perception output) */
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<AActor> TargetActor;
+
+	/** If true, the condition passes when TargetActor is NOT valid */
+	UPROPERTY(EditAnywhere, Category = "Parameter")
+	bool bInvert = false;
 };
 
 /**
