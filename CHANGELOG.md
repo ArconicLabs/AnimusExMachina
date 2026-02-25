@@ -20,7 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Conditions**:
   - `FAxMCondition_HasTarget` — Returns true when a bound `TargetActor` is valid. Supports `bInvert`.
   - `FAxMCondition_IsInAttackRange` — Passes through a bound `IsInAttackRange` bool. Supports `bInvert`.
-- **Content**: Sample `BP_AxM_AIController` blueprint and `ST_AxM_Sample` StateTree asset.
+- **Content**:
+  - `BP_AxM_AIController` — Sample AI Controller blueprint.
+  - `ST_AxM_Sample` — Pre-wired StateTree asset (Patrol → Pursue ↔ Engage with global perception and target tracking).
+  - `BP_AxM_SampleNPC` — Sample NPC character with Animation Blueprint and movement configured for AI (Use Acceleration for Paths enabled).
+  - `Lvl_AxM_SampleThirdPerson` — Test level with NavMesh for AI navigation.
 - `LogAxM` log category for plugin-wide logging.
 - Module dependencies: `AIModule`, `StateTreeModule`, `GameplayStateTreeModule`, `NavigationSystem`.
 - Plugin dependencies: `StateTree`, `GameplayStateTree`.
