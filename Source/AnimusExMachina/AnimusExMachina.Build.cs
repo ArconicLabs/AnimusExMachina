@@ -15,6 +15,7 @@ public class AnimusExMachina : ModuleRules
 				"AIModule",
 				"StateTreeModule",
 				"GameplayStateTreeModule",
+				"GameplayTags",
 			}
 		);
 

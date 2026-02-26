@@ -14,7 +14,7 @@ EStateTreeRunStatus FAxMGlobalTask_TargetTracking::Tick(
 	{
 		InstanceData.DistanceToTarget = 0.0f;
 		InstanceData.HasLineOfSight = false;
-		InstanceData.IsInAttackRange = false;
+		InstanceData.IsInEngagementRange = false;
 		return EStateTreeRunStatus::Running;
 	}
 
@@ -31,7 +31,7 @@ EStateTreeRunStatus FAxMGlobalTask_TargetTracking::Tick(
 	InstanceData.HasLineOfSight = InstanceData.Controller->LineOfSightTo(
 		InstanceData.TargetActor);
 
-	InstanceData.IsInAttackRange = InstanceData.DistanceToTarget <= InstanceData.AttackRange;
+	InstanceData.IsInEngagementRange = InstanceData.DistanceToTarget <= InstanceData.EngagementRange;
 
 	return EStateTreeRunStatus::Running;
 }
@@ -43,6 +43,6 @@ FText FAxMGlobalTask_TargetTracking::GetDescription(
 	const IStateTreeBindingLookup& BindingLookup,
 	EStateTreeNodeFormatting Formatting) const
 {
-	return FText::FromString(TEXT("<b>AxM Target Tracking</b>"));
+	return FText::FromString(TEXT("<b>AxM Target</b>"));
 }
 #endif
