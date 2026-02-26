@@ -1,8 +1,8 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
 // Global StateTree task that reads cached perception data from the AI
-// Controller and exposes TargetActor, LastKnownLocation, and HomeLocation
-// as bindable output properties for the rest of the tree.
+// Controller and exposes sight, hearing, and damage outputs as bindable
+// properties for the rest of the tree.
 
 #pragma once
 
@@ -35,6 +35,14 @@ struct FAxMGlobalTask_PerceptionInstanceData
 	/** [Output] The NPC's home/spawn location, recorded when the tree starts */
 	UPROPERTY(EditAnywhere, Category = "Output")
 	FVector HomeLocation = FVector::ZeroVector;
+
+	/** [Output] Location of the most recent unconfirmed stimulus (hearing or unknown-source damage) */
+	UPROPERTY(EditAnywhere, Category = "Output")
+	FVector StimulusLocation = FVector::ZeroVector;
+
+	/** [Output] Strength of the most recent hearing event (0 if none this tick) */
+	UPROPERTY(EditAnywhere, Category = "Output")
+	float HearingStrength = 0.0f;
 };
 
 /**

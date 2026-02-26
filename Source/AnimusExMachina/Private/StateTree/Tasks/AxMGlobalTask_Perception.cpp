@@ -34,9 +34,42 @@ EStateTreeRunStatus FAxMGlobalTask_Perception::Tick(
 		return EStateTreeRunStatus::Running;
 	}
 
-	// read cached perception data from the controller's delegate results
+	// --- Sight (always read) ---
 	InstanceData.TargetActor = AxMController->GetCachedTargetActor();
 	InstanceData.LastKnownLocation = AxMController->GetCachedLastKnownLocation();
+
+	// --- Hearing (consume pending event, reset strength when idle) ---
+	if (AxMController->HasPendingHearingEvent())
+	{
+		float Strength;
+		FVector Location;
+		AxMController->ConsumeHearingEvent(Strength, Location);
+		InstanceData.StimulusLocation = Location;
+		InstanceData.HearingStrength = Strength;
+	}
+	else
+	{
+		InstanceData.HearingStrength = 0.0f;
+	}
+
+	// --- Damage (known instigator → immediate target, unknown → investigate) ---
+	if (AxMController->HasPendingDamageEvent())
+	{
+		AActor* Instigator = nullptr;
+		FVector Location;
+		AxMController->ConsumeDamageEvent(Instigator, Location);
+
+		if (IsValid(Instigator))
+		{
+			InstanceData.TargetActor = Instigator;
+			InstanceData.LastKnownLocation = Instigator->GetActorLocation();
+		}
+		else
+		{
+			InstanceData.StimulusLocation = Location;
+			InstanceData.HearingStrength = 1.0f;
+		}
+	}
 
 	return EStateTreeRunStatus::Running;
 }
