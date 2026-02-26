@@ -75,12 +75,12 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 			{
 				if (MoveResult.IsSuccess())
 				{
-					WeakContext.FinishTask(
+					(void)WeakContext.FinishTask(
 						EStateTreeFinishTaskType::Succeeded);
 				}
 				else
 				{
-					WeakContext.FinishTask(
+					(void)WeakContext.FinishTask(
 						EStateTreeFinishTaskType::Failed);
 				}
 			}
