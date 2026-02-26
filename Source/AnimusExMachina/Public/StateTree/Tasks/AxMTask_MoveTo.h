@@ -34,6 +34,9 @@ struct FAxMTask_MoveToInstanceData
 	/** Acceptance radius for reaching the destination */
 	UPROPERTY(EditAnywhere, Category = "Parameter", meta = (ClampMin = "0", Units = "cm"))
 	float AcceptanceRadius = 50.0f;
+
+	// Internal: delegate handle for proper cleanup
+	FDelegateHandle MoveFinishedHandle;
 };
 
 /**

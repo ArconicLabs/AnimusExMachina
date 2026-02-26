@@ -23,10 +23,12 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 		return EStateTreeRunStatus::Failed;
 	}
 
+	const bool bHasTargetActor = IsValid(InstanceData.TargetActor);
+
 	// issue the move request
 	EPathFollowingRequestResult::Type Result;
 
-	if (IsValid(InstanceData.TargetActor))
+	if (bHasTargetActor)
 	{
 		Result = InstanceData.Controller->MoveToActor(
 			InstanceData.TargetActor,
@@ -41,6 +43,11 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 
 	if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
 	{
+		// following a moving actor — stay alive for the tick transition to handle
+		if (bHasTargetActor)
+		{
+			return EStateTreeRunStatus::Running;
+		}
 		return EStateTreeRunStatus::Succeeded;
 	}
 
@@ -49,22 +56,33 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 		return EStateTreeRunStatus::Failed;
 	}
 
-	// bind to the path following component's non-dynamic delegate for async completion
+	// bind to the path following component's delegate for async completion
 	UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
 	if (PathComp)
 	{
-		PathComp->OnRequestFinished.AddLambda(
-			[WeakContext = Context.MakeWeakExecutionContext()](
+		TWeakObjectPtr<AAIController> WeakController = InstanceData.Controller;
+		TWeakObjectPtr<AActor> WeakTarget = InstanceData.TargetActor;
+		float AcceptanceRadius = InstanceData.AcceptanceRadius;
+
+		InstanceData.MoveFinishedHandle = PathComp->OnRequestFinished.AddLambda(
+			[WeakContext = Context.MakeWeakExecutionContext(), WeakController, WeakTarget, AcceptanceRadius](
 				FAIRequestID RequestID, const FPathFollowingResult& MoveResult)
 			{
-				if (MoveResult.IsSuccess())
-				{
-					WeakContext.FinishTask(EStateTreeFinishTaskType::Succeeded);
-				}
-				else
+				if (!MoveResult.IsSuccess())
 				{
 					WeakContext.FinishTask(EStateTreeFinishTaskType::Failed);
+					return;
 				}
+
+				// continuous follow: target is still valid, re-issue MoveToActor
+				if (WeakTarget.IsValid() && WeakController.IsValid())
+				{
+					WeakController->MoveToActor(WeakTarget.Get(), AcceptanceRadius);
+					return;
+				}
+
+				// one-shot: reached a fixed location
+				WeakContext.FinishTask(EStateTreeFinishTaskType::Succeeded);
 			}
 		);
 	}
@@ -81,17 +99,18 @@ void FAxMTask_MoveTo::ExitState(
 		return;
 	}
 
-	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 
 	if (InstanceData.Controller)
 	{
 		InstanceData.Controller->StopMovement();
 
-		// clean up the delegate binding
+		// clean up the delegate binding using the stored handle
 		UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
-		if (PathComp)
+		if (PathComp && InstanceData.MoveFinishedHandle.IsValid())
 		{
-			PathComp->OnRequestFinished.RemoveAll(this);
+			PathComp->OnRequestFinished.Remove(InstanceData.MoveFinishedHandle);
+			InstanceData.MoveFinishedHandle.Reset();
 		}
 	}
 }
