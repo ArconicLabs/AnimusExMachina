@@ -35,6 +35,10 @@ struct FAxMTask_MoveToInstanceData
 	UPROPERTY(EditAnywhere, Category = "Parameter", meta = (ClampMin = "0", Units = "cm"))
 	float AcceptanceRadius = 50.0f;
 
+	/** Allow navigating as close as possible when the destination is off-navmesh */
+	UPROPERTY(EditAnywhere, Category = "Parameter")
+	bool bAllowPartialPath = true;
+
 	// Internal: delegate handle for proper cleanup
 	FDelegateHandle MoveFinishedHandle;
 };

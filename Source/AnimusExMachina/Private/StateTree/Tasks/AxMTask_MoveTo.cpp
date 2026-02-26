@@ -11,6 +11,7 @@
 #include "StateTreeExecutionTypes.h"
 #include "StateTreeAsyncExecutionContext.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "AITypes.h"
 
 EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 	FStateTreeExecutionContext& Context,
@@ -31,21 +32,23 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 
 	const bool bHasTargetActor = IsValid(InstanceData.TargetActor);
 
-	// issue the move request
-	EPathFollowingRequestResult::Type Result;
+	// build the move request so we can control partial-path behavior
+	FAIMoveRequest MoveRequest;
+	MoveRequest.SetAcceptanceRadius(InstanceData.AcceptanceRadius);
+	MoveRequest.SetAllowPartialPath(InstanceData.bAllowPartialPath);
 
 	if (bHasTargetActor)
 	{
-		Result = InstanceData.Controller->MoveToActor(
-			InstanceData.TargetActor,
-			InstanceData.AcceptanceRadius);
+		MoveRequest.SetGoalActor(InstanceData.TargetActor);
 	}
 	else
 	{
-		Result = InstanceData.Controller->MoveToLocation(
-			InstanceData.TargetLocation,
-			InstanceData.AcceptanceRadius);
+		MoveRequest.SetGoalLocation(InstanceData.TargetLocation);
 	}
+
+	const FPathFollowingRequestResult MoveResult =
+		InstanceData.Controller->MoveTo(MoveRequest);
+	const EPathFollowingRequestResult::Type Result = MoveResult.Code;
 
 	if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
 	{

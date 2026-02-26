@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **AI Controller**: Exposed `StateTreeTickInterval` property (`AxM|StateTree` category) to throttle `UStateTreeAIComponent` evaluation frequency. Defaults to 0.1s (10 Hz). Set to 0 for every-frame evaluation.
+- **AxMTask_MoveTo**: Added `bAllowPartialPath` parameter (defaults to `true`). NPC navigates as close as possible when the target is off-navmesh instead of failing immediately.
 
 ### Changed
 
