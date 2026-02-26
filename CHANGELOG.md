@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **EngagementRange**: Renamed `AttackRange` to `EngagementRange` throughout (TargetTracking global task parameter and output, condition). Engagement range is archetype-level (when the NPC enters combat); per-attack ranges live in combat sub-StateTrees.
 - **AI Controller**: Perception parameters now optionally read from `UAxMConfig` Data Asset in `PostInitializeComponents`. Loose UPROPERTY fields remain as fallback when no Config is assigned. Sight perception handler fires `OnTargetAcquired`/`OnTargetLost` delegates on target transitions.
 - **Categories**: Renamed all UPROPERTY/USTRUCT categories from `AxM|...` to `Animus Ex Machina|...` to prevent Unreal editor camelCase splitting.
-- **ST_AxM_Sample**: Added explicit self-transitions on Pursue and Engage states so combat tasks re-execute continuously via the StateTree rather than internal looping.
+- **ST_AxM_Master**: Renamed from `ST_AxM_Sample` to reflect its role as the shared master StateTree template. Added explicit self-transitions on Pursue and Engage states so combat tasks re-execute continuously via the StateTree rather than internal looping.
 - **AxMTask_MoveTo**: Simplified to a single-outcome task — issues one move request and reports Succeeded or Failed. `AlreadyAtGoal` returns `Succeeded` unconditionally. Delegate is a straightforward `FinishTask` reporter with no re-issuing. `ExitState` removes delegate before `StopMovement` to prevent cleanup-triggered callbacks. Continuous following is now the StateTree's responsibility via self-transitions. `MoveToActor` now falls back to `MoveToLocation` (bound `TargetLocation`) when the actor's position is unreachable (e.g. off-navmesh).
 - **AxMTask_SearchArea**: Replaced Tick-based polling with fully delegate-driven approach. Move chaining uses `OnRequestFinished` delegate; search duration uses `FTimerHandle` instead of manual elapsed time accumulation. `Tick` override removed entirely.
 - **AxMTask_Attack**: Returns `Succeeded` after `AttackDuration` expires. Continuous attacking is the StateTree's responsibility via self-transitions on the Engage state.
@@ -69,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `FAxMCondition_IsInEngagementRange` — Passes through a bound `IsInEngagementRange` bool. Supports `bInvert`.
 - **Content**:
   - `BP_AxM_AIController` — Sample AI Controller blueprint.
-  - `ST_AxM_Sample` — Pre-wired StateTree asset (Patrol → Pursue ↔ Engage with global perception and target tracking).
+  - `ST_AxM_Master` — Pre-wired master StateTree template (Patrol → Pursue ↔ Engage with global perception and target tracking).
   - `BP_AxM_SampleNPC` — Sample NPC character with Animation Blueprint and movement configured for AI (Use Acceleration for Paths enabled).
   - `Lvl_AxM_SampleThirdPerson` — Test level with NavMesh for AI navigation.
 - `LogAxM` log category for plugin-wide logging.
