@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **ST_AxM_Sample**: Added explicit self-transitions on Pursue and Engage states so combat tasks re-execute continuously via the StateTree rather than internal looping.
 - **AxMTask_MoveTo**: Simplified to a single-outcome task — issues one move request and reports Succeeded or Failed. No internal routing (continuous-follow vs one-shot distinction removed). `AlreadyAtGoal` returns `Succeeded` unconditionally. Delegate is a straightforward `FinishTask` reporter with no re-issuing. `ExitState` removes delegate before `StopMovement` to prevent cleanup-triggered callbacks. Continuous following is now the StateTree's responsibility via self-transitions.
 - **AxMTask_SearchArea**: Replaced Tick-based polling with fully delegate-driven approach. Move chaining uses `OnRequestFinished` delegate; search duration uses `FTimerHandle` instead of manual elapsed time accumulation. `Tick` override removed entirely.
 - **AxMTask_Attack**: Returns `Succeeded` after `AttackDuration` expires. Continuous attacking is the StateTree's responsibility via self-transitions on the Engage state.
