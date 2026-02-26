@@ -68,21 +68,22 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 			[WeakContext = Context.MakeWeakExecutionContext(), WeakController, WeakTarget, AcceptanceRadius](
 				FAIRequestID RequestID, const FPathFollowingResult& MoveResult)
 			{
-				if (!MoveResult.IsSuccess())
-				{
-					WeakContext.FinishTask(EStateTreeFinishTaskType::Failed);
-					return;
-				}
-
-				// continuous follow: target is still valid, re-issue MoveToActor
+				// continuous follow: target still valid → always re-issue, never FinishTask
 				if (WeakTarget.IsValid() && WeakController.IsValid())
 				{
 					WeakController->MoveToActor(WeakTarget.Get(), AcceptanceRadius);
 					return;
 				}
 
-				// one-shot: reached a fixed location
-				WeakContext.FinishTask(EStateTreeFinishTaskType::Succeeded);
+				// one-shot: target gone → complete based on move result
+				if (MoveResult.IsSuccess())
+				{
+					WeakContext.FinishTask(EStateTreeFinishTaskType::Succeeded);
+				}
+				else
+				{
+					WeakContext.FinishTask(EStateTreeFinishTaskType::Failed);
+				}
 			}
 		);
 	}
@@ -103,15 +104,17 @@ void FAxMTask_MoveTo::ExitState(
 
 	if (InstanceData.Controller)
 	{
-		InstanceData.Controller->StopMovement();
-
-		// clean up the delegate binding using the stored handle
+		// remove delegate before stopping movement — StopMovement aborts the
+		// active request which fires OnRequestFinished; the delegate must
+		// already be unbound so it doesn't call FinishTask during cleanup
 		UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
 		if (PathComp && InstanceData.MoveFinishedHandle.IsValid())
 		{
 			PathComp->OnRequestFinished.Remove(InstanceData.MoveFinishedHandle);
 			InstanceData.MoveFinishedHandle.Reset();
 		}
+
+		InstanceData.Controller->StopMovement();
 	}
 }
 

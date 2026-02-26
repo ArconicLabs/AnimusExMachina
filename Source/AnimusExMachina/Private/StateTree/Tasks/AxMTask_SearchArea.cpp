@@ -194,7 +194,9 @@ void FAxMTask_SearchArea::ExitState(
 			World->GetTimerManager().ClearTimer(InstanceData.SearchTimerHandle);
 		}
 
-		// remove move completion delegate
+		// remove delegate before stopping movement — StopMovement aborts the
+		// active request which fires OnRequestFinished; the delegate must
+		// already be unbound so it doesn't call FinishTask during cleanup
 		UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
 		if (PathComp && InstanceData.MoveFinishedHandle.IsValid())
 		{
@@ -202,7 +204,6 @@ void FAxMTask_SearchArea::ExitState(
 			InstanceData.MoveFinishedHandle.Reset();
 		}
 
-		// stop any in-progress movement
 		InstanceData.Controller->StopMovement();
 	}
 }

@@ -55,7 +55,13 @@ EStateTreeRunStatus FAxMTask_LookAround::Tick(
 
 	if (InstanceData.ElapsedTime >= InstanceData.LookDuration)
 	{
-		return EStateTreeRunStatus::Succeeded;
+		InstanceData.ElapsedTime = 0.0f;
+		InstanceData.LookPhase = 0;
+		if (InstanceData.Controller)
+		{
+			InstanceData.Controller->SetFocalPoint(InstanceData.FocalPoints[0]);
+		}
+		return EStateTreeRunStatus::Running;
 	}
 
 	// step through focal points at equal intervals

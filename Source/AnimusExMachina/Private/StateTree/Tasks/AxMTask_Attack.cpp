@@ -37,10 +37,11 @@ EStateTreeRunStatus FAxMTask_Attack::Tick(
 	{
 		if (InstanceData.Pawn)
 		{
-			UE_LOG(LogAxM, Log, TEXT("%s attack complete"),
+			UE_LOG(LogAxM, Log, TEXT("%s attack landed"),
 				*InstanceData.Pawn->GetName());
 		}
-		return EStateTreeRunStatus::Succeeded;
+		InstanceData.ElapsedTime = 0.0f;
+		return EStateTreeRunStatus::Running;
 	}
 
 	return EStateTreeRunStatus::Running;

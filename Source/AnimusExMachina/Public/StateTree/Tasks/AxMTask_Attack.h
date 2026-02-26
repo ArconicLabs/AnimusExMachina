@@ -1,8 +1,8 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
 // Placeholder attack task that simulates an attack with a configurable
-// timer duration, then completes. Will be replaced with montage-driven
-// combat logic in a later milestone.
+// timer duration, looping until the state transitions out. Will be
+// replaced with montage-driven combat logic in a later milestone.
 
 #pragma once
 
