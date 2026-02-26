@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **AxMTask_MoveTo**: Refactored to delegate-driven async completion with implicit follow behavior. If `TargetActor` is valid the task re-issues `MoveToActor` on arrival (continuous follow for Pursue); if null it calls `FinishTask(Succeeded)` (one-shot for GoToStimulus / GoToLastKnown). Fixes a race condition where the delegate completed the task before the `IsInAttackRange` tick transition could evaluate, causing the Pursue state to erroneously bubble up to Patrol. Fixed delegate cleanup in `ExitState` — `RemoveAll(this)` was a no-op for lambda bindings; now uses `FDelegateHandle`-based removal.
+- **AxMTask_SearchArea**: Replaced Tick-based polling with fully delegate-driven approach. Move chaining uses `OnRequestFinished` delegate; search duration uses `FTimerHandle` instead of manual elapsed time accumulation. `Tick` override removed entirely.
+
 ### Added
 
 - **AI Controller**: Modular sense system with per-subclass toggle flags (`bEnableSight`, `bEnableHearing`, `bEnableDamage`). Configurable sense parameters exposed as `EditDefaultsOnly` properties. Hearing and damage events cached with pending-flag consume pattern for safe Global Task reads.
@@ -17,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `FAxMGlobalTask_Suspicion` — Manages a suspicion level (0–1) driven by hearing events. Accumulates from `HearingStrength` input, decays per-second at configurable rate. Outputs `SuspicionLevel` and `bIsSuspicious` threshold flag for driving Patrol → Investigate transitions.
 - **State Tasks**:
   - `FAxMTask_LookAround` — Rotates the AI pawn through three focal points (left, right, forward) over a configurable duration then succeeds. Used in Investigate state.
-  - `FAxMTask_SearchArea` — Navigates the NPC to successive search points around a center location. Supports EQS-driven queries (assign a `QueryAsset`) or random NavMesh fallback. Tick-based polling chains moves. Succeeds when `SearchDuration` expires.
+  - `FAxMTask_SearchArea` — Navigates the NPC to successive search points around a center location. Supports EQS-driven queries (assign a `QueryAsset`) or random NavMesh fallback. Delegate-driven move chaining with timer-based duration. Succeeds when `SearchDuration` expires.
 - **Conditions**:
   - `FAxMCondition_IsSuspicious` — Passes through `bIsSuspicious` from the Suspicion global task. Supports `bInvert`.
 - **EQS**:
