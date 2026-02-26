@@ -1,6 +1,11 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
+// Navigates the AI pawn to a target actor (continuous follow) or location
+// (one-shot). Completion is fully delegate-driven via OnRequestFinished —
+// no Tick override. See header comment for mode details.
+
 #include "StateTree/Tasks/AxMTask_MoveTo.h"
+#include "AnimusExMachina.h"
 #include "AIController.h"
 #include "StateTreeExecutionContext.h"
 #include "StateTreeExecutionTypes.h"
@@ -20,6 +25,7 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 
 	if (!InstanceData.Controller)
 	{
+		UE_LOG(LogAxM, Warning, TEXT("MoveTo: no controller bound"));
 		return EStateTreeRunStatus::Failed;
 	}
 
@@ -43,46 +49,66 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 
 	if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
 	{
-		// following a moving actor — stay alive for the tick transition to handle
-		if (bHasTargetActor)
-		{
-			return EStateTreeRunStatus::Running;
-		}
-		return EStateTreeRunStatus::Succeeded;
+		UE_LOG(LogAxM, Log, TEXT("MoveTo: AlreadyAtGoal — bHasTargetActor=%d"),
+			bHasTargetActor);
+		// continuous follow: at target, state transitions handle next step
+		// one-shot: arrived, complete immediately
+		return bHasTargetActor
+			? EStateTreeRunStatus::Running
+			: EStateTreeRunStatus::Succeeded;
 	}
 
 	if (Result == EPathFollowingRequestResult::Failed)
 	{
+		UE_LOG(LogAxM, Warning, TEXT("MoveTo: path request failed — TargetActor=%s, Location=%s, Radius=%.1f"),
+			bHasTargetActor ? *GetNameSafe(InstanceData.TargetActor) : TEXT("null"),
+			*InstanceData.TargetLocation.ToString(),
+			InstanceData.AcceptanceRadius);
 		return EStateTreeRunStatus::Failed;
 	}
 
-	// bind to the path following component's delegate for async completion
-	UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
+	// RequestSuccessful — bind delegate for async completion
+	UPathFollowingComponent* PathComp =
+		InstanceData.Controller->GetPathFollowingComponent();
+
 	if (PathComp)
 	{
 		TWeakObjectPtr<AAIController> WeakController = InstanceData.Controller;
 		TWeakObjectPtr<AActor> WeakTarget = InstanceData.TargetActor;
-		float AcceptanceRadius = InstanceData.AcceptanceRadius;
+		float Radius = InstanceData.AcceptanceRadius;
 
 		InstanceData.MoveFinishedHandle = PathComp->OnRequestFinished.AddLambda(
-			[WeakContext = Context.MakeWeakExecutionContext(), WeakController, WeakTarget, AcceptanceRadius](
+			[WeakContext = Context.MakeWeakExecutionContext(),
+			 WeakController, WeakTarget, Radius](
 				FAIRequestID RequestID, const FPathFollowingResult& MoveResult)
 			{
-				// continuous follow: target still valid → always re-issue, never FinishTask
 				if (WeakTarget.IsValid() && WeakController.IsValid())
 				{
-					WeakController->MoveToActor(WeakTarget.Get(), AcceptanceRadius);
+					// Continuous follow — re-issue only on non-success
+					// (aborted path, blocked, etc.). On success the NPC
+					// arrived; state transitions handle the next step.
+					//
+					// Re-entrancy safe: if re-issue triggers AlreadyAtGoal,
+					// UE fires this delegate synchronously with Success,
+					// which we don't re-issue on.
+					if (!MoveResult.IsSuccess())
+					{
+						WeakController->MoveToActor(
+							WeakTarget.Get(), Radius);
+					}
 					return;
 				}
 
-				// one-shot: target gone → complete based on move result
+				// One-shot — complete the task
 				if (MoveResult.IsSuccess())
 				{
-					WeakContext.FinishTask(EStateTreeFinishTaskType::Succeeded);
+					WeakContext.FinishTask(
+						EStateTreeFinishTaskType::Succeeded);
 				}
 				else
 				{
-					WeakContext.FinishTask(EStateTreeFinishTaskType::Failed);
+					WeakContext.FinishTask(
+						EStateTreeFinishTaskType::Failed);
 				}
 			}
 		);
@@ -104,13 +130,14 @@ void FAxMTask_MoveTo::ExitState(
 
 	if (InstanceData.Controller)
 	{
-		// remove delegate before stopping movement — StopMovement aborts the
-		// active request which fires OnRequestFinished; the delegate must
-		// already be unbound so it doesn't call FinishTask during cleanup
-		UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
+		// remove delegate before StopMovement — StopMovement aborts the
+		// active request which fires OnRequestFinished synchronously
+		UPathFollowingComponent* PathComp =
+			InstanceData.Controller->GetPathFollowingComponent();
 		if (PathComp && InstanceData.MoveFinishedHandle.IsValid())
 		{
-			PathComp->OnRequestFinished.Remove(InstanceData.MoveFinishedHandle);
+			PathComp->OnRequestFinished.Remove(
+				InstanceData.MoveFinishedHandle);
 			InstanceData.MoveFinishedHandle.Reset();
 		}
 
