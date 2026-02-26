@@ -29,7 +29,7 @@ struct FAxMCondition_IsInAttackRangeInstanceData
 /**
  *  StateTree condition that returns the value of a bound IsInAttackRange bool.
  */
-USTRUCT(DisplayName = "AxM Is In Attack Range")
+USTRUCT(meta = (DisplayName = "AxM Is In Attack Range", Category = "Animus Ex Machina|Conditions"))
 struct ANIMUSEXMACHINA_API FAxMCondition_IsInAttackRange : public FStateTreeConditionCommonBase
 {
 	GENERATED_BODY()

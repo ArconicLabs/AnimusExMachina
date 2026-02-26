@@ -33,7 +33,7 @@ struct FAxMTask_AttackInstanceData
 /**
  *  Placeholder attack task. Runs for AttackDuration seconds then succeeds.
  */
-USTRUCT(meta = (DisplayName = "AxM Attack (Placeholder)", Category = "AxM|Tasks"))
+USTRUCT(meta = (DisplayName = "AxM Attack (Placeholder)", Category = "Animus Ex Machina|Tasks"))
 struct ANIMUSEXMACHINA_API FAxMTask_Attack : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()

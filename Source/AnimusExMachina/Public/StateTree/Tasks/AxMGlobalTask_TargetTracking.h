@@ -48,7 +48,7 @@ struct FAxMGlobalTask_TargetTrackingInstanceData
  *  Global StateTree task that computes DistanceToTarget, HasLineOfSight,
  *  and IsInAttackRange from TargetActor. Runs every tick on the root state.
  */
-USTRUCT(meta = (DisplayName = "AxM Target Tracking (Global)", Category = "AxM|Global"))
+USTRUCT(meta = (DisplayName = "AxM Target Tracking (Global)", Category = "Animus Ex Machina|Global"))
 struct ANIMUSEXMACHINA_API FAxMGlobalTask_TargetTracking : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()

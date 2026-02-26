@@ -47,7 +47,7 @@ struct FAxMTask_SearchAreaInstanceData
 	FTimerHandle SearchTimerHandle;
 };
 
-USTRUCT(meta = (DisplayName = "AxM Search Area", Category = "AxM|Tasks"))
+USTRUCT(meta = (DisplayName = "AxM Search Area", Category = "Animus Ex Machina|Tasks"))
 struct ANIMUSEXMACHINA_API FAxMTask_SearchArea : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()

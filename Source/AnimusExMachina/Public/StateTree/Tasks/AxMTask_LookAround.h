@@ -35,7 +35,7 @@ struct FAxMTask_LookAroundInstanceData
 	FVector FocalPoints[3];
 };
 
-USTRUCT(meta = (DisplayName = "AxM Look Around", Category = "AxM|Tasks"))
+USTRUCT(meta = (DisplayName = "AxM Look Around", Category = "Animus Ex Machina|Tasks"))
 struct ANIMUSEXMACHINA_API FAxMTask_LookAround : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()

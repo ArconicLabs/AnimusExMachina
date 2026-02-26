@@ -35,11 +35,6 @@ void AAxMAIController::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	if (StateTreeAI)
-	{
-		StateTreeAI->PrimaryComponentTick.TickInterval = StateTreeTickInterval;
-	}
-
 	if (!PerceptionComp)
 	{
 		return;

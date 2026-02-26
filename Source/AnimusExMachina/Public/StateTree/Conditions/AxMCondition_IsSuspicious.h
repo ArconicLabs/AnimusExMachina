@@ -23,7 +23,7 @@ struct FAxMCondition_IsSuspiciousInstanceData
 	bool bInvert = false;
 };
 
-USTRUCT(meta = (DisplayName = "AxM Is Suspicious", Category = "AxM|Conditions"))
+USTRUCT(meta = (DisplayName = "AxM Is Suspicious", Category = "Animus Ex Machina|Conditions"))
 struct ANIMUSEXMACHINA_API FAxMCondition_IsSuspicious : public FStateTreeConditionCommonBase
 {
 	GENERATED_BODY()

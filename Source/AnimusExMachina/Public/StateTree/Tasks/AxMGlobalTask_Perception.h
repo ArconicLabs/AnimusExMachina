@@ -50,7 +50,7 @@ struct FAxMGlobalTask_PerceptionInstanceData
  *  results on the AI Controller. Writes TargetActor and LastKnownLocation
  *  for property binding throughout the tree.
  */
-USTRUCT(meta = (DisplayName = "AxM Perception (Global)", Category = "AxM|Global"))
+USTRUCT(meta = (DisplayName = "AxM Perception (Global)", Category = "Animus Ex Machina|Global"))
 struct ANIMUSEXMACHINA_API FAxMGlobalTask_Perception : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()

@@ -40,7 +40,7 @@ struct FAxMGlobalTask_SuspicionInstanceData
 	bool bIsSuspicious = false;
 };
 
-USTRUCT(meta = (DisplayName = "AxM Suspicion (Global)", Category = "AxM|Global"))
+USTRUCT(meta = (DisplayName = "AxM Suspicion (Global)", Category = "Animus Ex Machina|Global"))
 struct ANIMUSEXMACHINA_API FAxMGlobalTask_Suspicion : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()

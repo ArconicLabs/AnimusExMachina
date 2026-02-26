@@ -47,7 +47,7 @@ struct FAxMTask_MoveToInstanceData
  *  StateTree task that navigates the AI pawn to a target.
  *  Completes asynchronously when the destination is reached.
  */
-USTRUCT(meta = (DisplayName = "AxM Move To", Category = "AxM|Tasks"))
+USTRUCT(meta = (DisplayName = "AxM Move To", Category = "Animus Ex Machina|Tasks"))
 struct ANIMUSEXMACHINA_API FAxMTask_MoveTo : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()

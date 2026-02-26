@@ -32,7 +32,7 @@ struct FAxMTask_FaceTargetInstanceData
  *  StateTree task that faces the AI pawn toward a target actor.
  *  Sets focus on enter, clears on exit.
  */
-USTRUCT(meta = (DisplayName = "AxM Face Target", Category = "AxM|Tasks"))
+USTRUCT(meta = (DisplayName = "AxM Face Target", Category = "Animus Ex Machina|Tasks"))
 struct ANIMUSEXMACHINA_API FAxMTask_FaceTarget : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()

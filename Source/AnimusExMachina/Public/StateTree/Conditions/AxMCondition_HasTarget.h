@@ -29,7 +29,7 @@ struct FAxMCondition_HasTargetInstanceData
 /**
  *  StateTree condition that returns true when TargetActor is valid.
  */
-USTRUCT(DisplayName = "AxM Has Target")
+USTRUCT(meta = (DisplayName = "AxM Has Target", Category = "Animus Ex Machina|Conditions"))
 struct ANIMUSEXMACHINA_API FAxMCondition_HasTarget : public FStateTreeConditionCommonBase
 {
 	GENERATED_BODY()

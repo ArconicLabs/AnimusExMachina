@@ -30,11 +30,11 @@ public:
 	// --- Cached perception getters (read by Global Tasks) ---
 
 	/** Returns the cached target actor from the most recent sight or damage event */
-	UFUNCTION(BlueprintCallable, Category = "AxM|Perception")
+	UFUNCTION(BlueprintCallable, Category = "Animus Ex Machina|Perception")
 	AActor* GetCachedTargetActor() const { return CachedTargetActor; }
 
 	/** Returns the last known location of the target */
-	UFUNCTION(BlueprintCallable, Category = "AxM|Perception")
+	UFUNCTION(BlueprintCallable, Category = "Animus Ex Machina|Perception")
 	FVector GetCachedLastKnownLocation() const { return CachedLastKnownLocation; }
 
 	/** Returns the AI Perception component */
@@ -67,54 +67,48 @@ protected:
 
 	// --- Sense toggle flags (modular per Blueprint subclass) ---
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception")
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception")
 	bool bEnableSight = true;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception")
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception")
 	bool bEnableHearing = true;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception")
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception")
 	bool bEnableDamage = true;
 
 	// --- Configurable sense parameters ---
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Sight",
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception|Sight",
 		meta = (EditCondition = "bEnableSight", Units = "cm"))
 	float SightRadius = 1500.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Sight",
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception|Sight",
 		meta = (EditCondition = "bEnableSight", Units = "cm"))
 	float LoseSightRadius = 2000.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Sight",
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception|Sight",
 		meta = (EditCondition = "bEnableSight", Units = "deg"))
 	float PeripheralVisionAngle = 60.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Sight",
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception|Sight",
 		meta = (EditCondition = "bEnableSight", Units = "s"))
 	float SightMaxAge = 5.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Hearing",
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception|Hearing",
 		meta = (EditCondition = "bEnableHearing", Units = "cm"))
 	float HearingRange = 1500.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Hearing",
+	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Perception|Hearing",
 		meta = (EditCondition = "bEnableHearing", Units = "s"))
 	float HearingMaxAge = 3.0f;
 
-	// --- StateTree ---
-
-	/** StateTree evaluation frequency. 0 = every frame. */
-	UPROPERTY(EditDefaultsOnly, Category = "AxM|StateTree", meta = (Units = "s"))
-	float StateTreeTickInterval = 0.1f;
-
 	// --- Components ---
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AxM|Components",
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animus Ex Machina|Components",
 		meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStateTreeAIComponent> StateTreeAI;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AxM|Components",
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animus Ex Machina|Components",
 		meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAIPerceptionComponent> PerceptionComp;
 
