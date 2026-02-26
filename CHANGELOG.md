@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **AxMTask_MoveTo**: Fully delegate-driven async completion with no Tick dependency. Continuous follow (TargetActor valid) re-issues `MoveToActor` only on non-success results (path aborted/blocked); on success the NPC has arrived and state transitions handle the next step. One-shot (no TargetActor) calls `FinishTask` on completion. Re-entrancy safe — `AlreadyAtGoal` fires `OnRequestFinished` synchronously with Success, which the delegate correctly skips. `ExitState` removes delegate before `StopMovement` to prevent cleanup-triggered callbacks.
+- **AxMTask_MoveTo**: Simplified to a single-outcome task — issues one move request and reports Succeeded or Failed. No internal routing (continuous-follow vs one-shot distinction removed). `AlreadyAtGoal` returns `Succeeded` unconditionally. Delegate is a straightforward `FinishTask` reporter with no re-issuing. `ExitState` removes delegate before `StopMovement` to prevent cleanup-triggered callbacks. Continuous following is now the StateTree's responsibility via self-transitions.
 - **AxMTask_SearchArea**: Replaced Tick-based polling with fully delegate-driven approach. Move chaining uses `OnRequestFinished` delegate; search duration uses `FTimerHandle` instead of manual elapsed time accumulation. `Tick` override removed entirely.
-- **AxMTask_Attack**: Now loops its attack action (resets timer, continues Running) instead of completing after the duration. Prevents state completion from bubbling up to Patrol when the Engage state has no `On State Completed` handler.
-- **AxMTask_LookAround**: Now cycles focal points continuously instead of completing after the duration. Prevents premature exit from ScanArea via completion bubbling.
+- **AxMTask_Attack**: Returns `Succeeded` after `AttackDuration` expires. Continuous attacking is the StateTree's responsibility via self-transitions on the Engage state.
+- **AxMTask_LookAround**: Returns `Succeeded` after `LookDuration` expires. Continuous scanning is the StateTree's responsibility via self-transitions on the ScanArea state.
 
 ### Added
 
