@@ -102,6 +102,12 @@ protected:
 		meta = (EditCondition = "bEnableHearing", Units = "s"))
 	float HearingMaxAge = 3.0f;
 
+	// --- StateTree ---
+
+	/** StateTree evaluation frequency. 0 = every frame. */
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|StateTree", meta = (Units = "s"))
+	float StateTreeTickInterval = 0.1f;
+
 	// --- Components ---
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AxM|Components",

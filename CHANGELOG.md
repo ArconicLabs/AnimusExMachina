@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **AI Controller**: Exposed `StateTreeTickInterval` property (`AxM|StateTree` category) to throttle `UStateTreeAIComponent` evaluation frequency. Defaults to 0.1s (10 Hz). Set to 0 for every-frame evaluation.
+
 ### Changed
 
 - **AxMTask_MoveTo**: Simplified to a single-outcome task — issues one move request and reports Succeeded or Failed. No internal routing (continuous-follow vs one-shot distinction removed). `AlreadyAtGoal` returns `Succeeded` unconditionally. Delegate is a straightforward `FinishTask` reporter with no re-issuing. `ExitState` removes delegate before `StopMovement` to prevent cleanup-triggered callbacks. Continuous following is now the StateTree's responsibility via self-transitions.
