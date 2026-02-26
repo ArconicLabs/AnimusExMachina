@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **AxMTask_MoveTo**: Refactored to delegate-driven async completion with implicit follow behavior. If `TargetActor` is valid the task re-issues `MoveToActor` on arrival (continuous follow for Pursue); if null it calls `FinishTask(Succeeded)` (one-shot for GoToStimulus / GoToLastKnown). Fixes a race condition where the delegate completed the task before the `IsInAttackRange` tick transition could evaluate, causing the Pursue state to erroneously bubble up to Patrol. Fixed delegate cleanup in `ExitState` — `RemoveAll(this)` was a no-op for lambda bindings; now uses `FDelegateHandle`-based removal.
+- **AxMTask_MoveTo**: Refactored to delegate-driven async completion with implicit follow behavior. If `TargetActor` is valid the task re-issues `MoveToActor` on any completion (continuous follow for Pursue); if null it calls `FinishTask` (one-shot for GoToStimulus / GoToLastKnown). Continuous follow check runs first regardless of move result, preventing transient path aborts from killing the task. Fixed delegate cleanup in `ExitState` — `RemoveAll(this)` was a no-op for lambda bindings; now uses `FDelegateHandle`-based removal with delegate removed before `StopMovement` to prevent cleanup-triggered callbacks.
 - **AxMTask_SearchArea**: Replaced Tick-based polling with fully delegate-driven approach. Move chaining uses `OnRequestFinished` delegate; search duration uses `FTimerHandle` instead of manual elapsed time accumulation. `Tick` override removed entirely.
+- **AxMTask_Attack**: Now loops its attack action (resets timer, continues Running) instead of completing after the duration. Prevents state completion from bubbling up to Patrol when the Engage state has no `On State Completed` handler.
+- **AxMTask_LookAround**: Now cycles focal points continuously instead of completing after the duration. Prevents premature exit from ScanArea via completion bubbling.
 
 ### Added
 
