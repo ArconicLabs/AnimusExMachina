@@ -28,10 +28,10 @@ EStateTreeRunStatus FAxMGlobalTask_Config::EnterState(
 
 	// Copy all values from the Data Asset to bindable outputs
 	InstanceData.EngagementRange = ConfigAsset->EngagementRange;
-	InstanceData.PatrolSpeed = ConfigAsset->PatrolSpeed;
-	InstanceData.InvestigateSpeed = ConfigAsset->InvestigateSpeed;
-	InstanceData.CombatSpeed = ConfigAsset->CombatSpeed;
-	InstanceData.SearchSpeed = ConfigAsset->SearchSpeed;
+	InstanceData.PatrolMovementSpeed = ConfigAsset->PatrolMovementSpeed;
+	InstanceData.InvestigateMovementSpeed = ConfigAsset->InvestigateMovementSpeed;
+	InstanceData.CombatMovementSpeed = ConfigAsset->CombatMovementSpeed;
+	InstanceData.SearchMovementSpeed = ConfigAsset->SearchMovementSpeed;
 	InstanceData.SearchRadius = ConfigAsset->SearchRadius;
 	InstanceData.SearchDuration = ConfigAsset->SearchDuration;
 	InstanceData.SuspicionDecayRate = ConfigAsset->SuspicionDecayRate;

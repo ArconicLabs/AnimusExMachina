@@ -35,19 +35,19 @@ struct FAxMGlobalTask_ConfigInstanceData
 
 	/** [Output] Movement speed during Patrol state */
 	UPROPERTY(EditAnywhere, Category = "Output")
-	float PatrolSpeed = 200.0f;
+	float PatrolMovementSpeed = 200.0f;
 
 	/** [Output] Movement speed during Investigate state */
 	UPROPERTY(EditAnywhere, Category = "Output")
-	float InvestigateSpeed = 300.0f;
+	float InvestigateMovementSpeed = 300.0f;
 
 	/** [Output] Movement speed during Combat state */
 	UPROPERTY(EditAnywhere, Category = "Output")
-	float CombatSpeed = 450.0f;
+	float CombatMovementSpeed = 450.0f;
 
 	/** [Output] Movement speed during Search state */
 	UPROPERTY(EditAnywhere, Category = "Output")
-	float SearchSpeed = 350.0f;
+	float SearchMovementSpeed = 350.0f;
 
 	// --- Search ---
 

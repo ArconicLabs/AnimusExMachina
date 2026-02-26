@@ -176,19 +176,19 @@ void AAxMAIController::ApplyMovementSpeedForState(const FGameplayTag& StateTag)
 	float Speed = 0.0f;
 	if (StateTag == Config->PatrolTag)
 	{
-		Speed = Config->PatrolSpeed;
+		Speed = Config->PatrolMovementSpeed;
 	}
 	else if (StateTag == Config->InvestigateTag)
 	{
-		Speed = Config->InvestigateSpeed;
+		Speed = Config->InvestigateMovementSpeed;
 	}
 	else if (StateTag == Config->CombatTag)
 	{
-		Speed = Config->CombatSpeed;
+		Speed = Config->CombatMovementSpeed;
 	}
 	else if (StateTag == Config->SearchTag)
 	{
-		Speed = Config->SearchSpeed;
+		Speed = Config->SearchMovementSpeed;
 	}
 
 	if (Speed > 0.0f)

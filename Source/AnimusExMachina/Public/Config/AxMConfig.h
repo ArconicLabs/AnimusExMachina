@@ -87,19 +87,19 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Movement",
 		meta = (ClampMin = "0", Units = "cm/s"))
-	float PatrolSpeed = 200.0f;
+	float PatrolMovementSpeed = 200.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Movement",
 		meta = (ClampMin = "0", Units = "cm/s"))
-	float InvestigateSpeed = 300.0f;
+	float InvestigateMovementSpeed = 300.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Movement",
 		meta = (ClampMin = "0", Units = "cm/s"))
-	float CombatSpeed = 450.0f;
+	float CombatMovementSpeed = 450.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Movement",
 		meta = (ClampMin = "0", Units = "cm/s"))
-	float SearchSpeed = 350.0f;
+	float SearchMovementSpeed = 350.0f;
 
 	// --- Search ---
 
