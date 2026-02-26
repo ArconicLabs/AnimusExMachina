@@ -1,8 +1,9 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
 // AI Controller that owns the StateTree AI component and AI Perception
-// component (sight sense) for AxM NPCs. Caches perception results via
-// delegate so Global Tasks can read them safely during StateTree ticks.
+// component for AxM NPCs. Supports modular senses (sight, hearing, damage)
+// with per-subclass toggle flags. Caches perception results via delegate
+// so Global Tasks can read them safely during StateTree ticks.
 
 #pragma once
 
@@ -13,6 +14,8 @@
 class UStateTreeAIComponent;
 class UAIPerceptionComponent;
 class UAISenseConfig_Sight;
+class UAISenseConfig_Hearing;
+class UAISenseConfig_Damage;
 struct FAIStimulus;
 
 UCLASS()
@@ -24,7 +27,9 @@ public:
 
 	AAxMAIController();
 
-	/** Returns the cached target actor from the most recent perception update */
+	// --- Cached perception getters (read by Global Tasks) ---
+
+	/** Returns the cached target actor from the most recent sight or damage event */
 	UFUNCTION(BlueprintCallable, Category = "AxM|Perception")
 	AActor* GetCachedTargetActor() const { return CachedTargetActor; }
 
@@ -35,33 +40,103 @@ public:
 	/** Returns the AI Perception component */
 	UAIPerceptionComponent* GetAxMPerception() const { return PerceptionComp; }
 
+	// --- Hearing event consumption (one-shot per tick) ---
+
+	/** Returns true if a hearing stimulus arrived since the last consume */
+	bool HasPendingHearingEvent() const { return bHearingEventPending; }
+
+	/** Returns and clears the pending hearing event data */
+	void ConsumeHearingEvent(float& OutStrength, FVector& OutLocation);
+
+	// --- Damage event consumption (one-shot per tick) ---
+
+	/** Returns true if a damage stimulus arrived since the last consume */
+	bool HasPendingDamageEvent() const { return bDamageEventPending; }
+
+	/** Returns and clears the pending damage event data */
+	void ConsumeDamageEvent(AActor*& OutInstigator, FVector& OutLocation);
+
 protected:
 
+	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
 
 	/** Called when a perception target's stimulus changes */
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
-	/** StateTree AI logic component */
+	// --- Sense toggle flags (modular per Blueprint subclass) ---
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception")
+	bool bEnableSight = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception")
+	bool bEnableHearing = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception")
+	bool bEnableDamage = true;
+
+	// --- Configurable sense parameters ---
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Sight",
+		meta = (EditCondition = "bEnableSight", Units = "cm"))
+	float SightRadius = 1500.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Sight",
+		meta = (EditCondition = "bEnableSight", Units = "cm"))
+	float LoseSightRadius = 2000.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Sight",
+		meta = (EditCondition = "bEnableSight", Units = "deg"))
+	float PeripheralVisionAngle = 60.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Sight",
+		meta = (EditCondition = "bEnableSight", Units = "s"))
+	float SightMaxAge = 5.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Hearing",
+		meta = (EditCondition = "bEnableHearing", Units = "cm"))
+	float HearingRange = 1500.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AxM|Perception|Hearing",
+		meta = (EditCondition = "bEnableHearing", Units = "s"))
+	float HearingMaxAge = 3.0f;
+
+	// --- Components ---
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AxM|Components",
 		meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStateTreeAIComponent> StateTreeAI;
 
-	/** AI Perception component */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AxM|Components",
 		meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAIPerceptionComponent> PerceptionComp;
 
-	/** Sight sense configuration */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AxM|Perception",
-		meta = (AllowPrivateAccess = "true"))
+	// --- Sense configurations (created as subobjects, configured in PostInitializeComponents) ---
+
+	UPROPERTY()
 	TObjectPtr<UAISenseConfig_Sight> SightConfig;
 
-	/** Cached target from perception delegate */
+	UPROPERTY()
+	TObjectPtr<UAISenseConfig_Hearing> HearingConfig;
+
+	UPROPERTY()
+	TObjectPtr<UAISenseConfig_Damage> DamageConfig;
+
+	// --- Cached perception data (written by delegate, read by Global Tasks) ---
+
 	UPROPERTY(Transient)
 	TObjectPtr<AActor> CachedTargetActor;
 
-	/** Cached last known location from perception delegate */
 	FVector CachedLastKnownLocation = FVector::ZeroVector;
+
+	FVector CachedStimulusLocation = FVector::ZeroVector;
+	float CachedHearingStrength = 0.0f;
+	bool bHearingEventPending = false;
+
+	UPROPERTY(Transient)
+	TObjectPtr<AActor> CachedDamageInstigator;
+
+	FVector CachedDamageLocation = FVector::ZeroVector;
+	bool bDamageEventPending = false;
 };

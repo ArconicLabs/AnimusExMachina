@@ -1,10 +1,15 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
 #include "AI/AxMAIController.h"
+#include "AnimusExMachina.h"
 #include "Components/StateTreeAIComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
+#include "Perception/AISenseConfig_Hearing.h"
+#include "Perception/AISenseConfig_Damage.h"
 #include "Perception/AISense_Sight.h"
+#include "Perception/AISense_Hearing.h"
+#include "Perception/AISense_Damage.h"
 
 AAxMAIController::AAxMAIController()
 {
@@ -19,18 +24,52 @@ AAxMAIController::AAxMAIController()
 	PerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComp"));
 	SetPerceptionComponent(*PerceptionComp);
 
-	// Sight sense config
+	// Create sense configs as subobjects (configured in PostInitializeComponents
+	// so Blueprint-overridden parameter values are applied)
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
-	SightConfig->SightRadius = 1500.0f;
-	SightConfig->LoseSightRadius = 2000.0f;
-	SightConfig->PeripheralVisionAngleDegrees = 60.0f;
-	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
-	SightConfig->DetectionByAffiliation.bDetectFriendlies = false;
-	SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
-	SightConfig->SetMaxAge(5.0f);
+	HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
+	DamageConfig = CreateDefaultSubobject<UAISenseConfig_Damage>(TEXT("DamageConfig"));
+}
 
-	PerceptionComp->ConfigureSense(*SightConfig);
-	PerceptionComp->SetDominantSense(UAISenseConfig_Sight::StaticClass());
+void AAxMAIController::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	if (!PerceptionComp)
+	{
+		return;
+	}
+
+	// Configure only the enabled senses using the (potentially Blueprint-overridden) parameters
+	if (bEnableSight && SightConfig)
+	{
+		SightConfig->SightRadius = SightRadius;
+		SightConfig->LoseSightRadius = LoseSightRadius;
+		SightConfig->PeripheralVisionAngleDegrees = PeripheralVisionAngle;
+		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
+		SightConfig->DetectionByAffiliation.bDetectFriendlies = false;
+		SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+		SightConfig->SetMaxAge(SightMaxAge);
+
+		PerceptionComp->ConfigureSense(*SightConfig);
+		PerceptionComp->SetDominantSense(UAISenseConfig_Sight::StaticClass());
+	}
+
+	if (bEnableHearing && HearingConfig)
+	{
+		HearingConfig->HearingRange = HearingRange;
+		HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
+		HearingConfig->DetectionByAffiliation.bDetectFriendlies = false;
+		HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
+		HearingConfig->SetMaxAge(HearingMaxAge);
+
+		PerceptionComp->ConfigureSense(*HearingConfig);
+	}
+
+	if (bEnableDamage && DamageConfig)
+	{
+		PerceptionComp->ConfigureSense(*DamageConfig);
+	}
 }
 
 void AAxMAIController::BeginPlay()
@@ -51,19 +90,53 @@ void AAxMAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stim
 		return;
 	}
 
-	if (Stimulus.WasSuccessfullySensed())
+	// Dispatch by sense type
+	if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
 	{
-		// sight gained — cache the target and its location
-		CachedTargetActor = Actor;
-		CachedLastKnownLocation = Actor->GetActorLocation();
-	}
-	else
-	{
-		// sight lost — clear target but preserve last known location
-		if (CachedTargetActor == Actor)
+		if (Stimulus.WasSuccessfullySensed())
 		{
+			CachedTargetActor = Actor;
 			CachedLastKnownLocation = Actor->GetActorLocation();
-			CachedTargetActor = nullptr;
+		}
+		else
+		{
+			if (CachedTargetActor == Actor)
+			{
+				CachedLastKnownLocation = Actor->GetActorLocation();
+				CachedTargetActor = nullptr;
+			}
 		}
 	}
+	else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
+	{
+		// keep the strongest hearing event if multiple arrive between ticks
+		if (!bHearingEventPending || Stimulus.Strength > CachedHearingStrength)
+		{
+			CachedStimulusLocation = Stimulus.StimulusLocation;
+			CachedHearingStrength = Stimulus.Strength;
+		}
+		bHearingEventPending = true;
+	}
+	else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Damage>())
+	{
+		CachedDamageInstigator = Actor;
+		CachedDamageLocation = Stimulus.StimulusLocation;
+		bDamageEventPending = true;
+	}
+}
+
+void AAxMAIController::ConsumeHearingEvent(float& OutStrength, FVector& OutLocation)
+{
+	OutStrength = CachedHearingStrength;
+	OutLocation = CachedStimulusLocation;
+	bHearingEventPending = false;
+	CachedHearingStrength = 0.0f;
+}
+
+void AAxMAIController::ConsumeDamageEvent(AActor*& OutInstigator, FVector& OutLocation)
+{
+	OutInstigator = CachedDamageInstigator;
+	OutLocation = CachedDamageLocation;
+	bDamageEventPending = false;
+	CachedDamageInstigator = nullptr;
 }
