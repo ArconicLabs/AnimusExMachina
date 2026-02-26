@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **AxMTask_MoveTo**: Added `bAllowPartialPath` parameter (defaults to `true`). NPC navigates as close as possible when the target is off-navmesh instead of failing immediately.
-
 ### Changed
 
 - **ST_AxM_Sample**: Added explicit self-transitions on Pursue and Engage states so combat tasks re-execute continuously via the StateTree rather than internal looping.

@@ -23,21 +23,17 @@ struct FAxMTask_MoveToInstanceData
 	UPROPERTY(EditAnywhere, Category = "Context")
 	TObjectPtr<AAIController> Controller;
 
+	/** Optional target actor to navigate toward (overrides TargetLocation) */
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<AActor> TargetActor;
+	
 	/** Target location to navigate to (used if TargetActor is null) */
 	UPROPERTY(EditAnywhere, Category = "Input")
 	FVector TargetLocation = FVector::ZeroVector;
 
-	/** Optional target actor to navigate toward (overrides TargetLocation) */
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<AActor> TargetActor;
-
 	/** Acceptance radius for reaching the destination */
 	UPROPERTY(EditAnywhere, Category = "Parameter", meta = (ClampMin = "0", Units = "cm"))
 	float AcceptanceRadius = 50.0f;
-
-	/** Allow navigating as close as possible when the destination is off-navmesh */
-	UPROPERTY(EditAnywhere, Category = "Parameter")
-	bool bAllowPartialPath = true;
 
 	// Internal: delegate handle for proper cleanup
 	FDelegateHandle MoveFinishedHandle;

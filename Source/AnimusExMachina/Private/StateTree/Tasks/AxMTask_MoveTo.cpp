@@ -11,7 +11,6 @@
 #include "StateTreeExecutionTypes.h"
 #include "StateTreeAsyncExecutionContext.h"
 #include "Navigation/PathFollowingComponent.h"
-#include "AITypes.h"
 
 EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 	FStateTreeExecutionContext& Context,
@@ -32,23 +31,23 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 
 	const bool bHasTargetActor = IsValid(InstanceData.TargetActor);
 
-	// build the move request so we can control partial-path behavior
-	FAIMoveRequest MoveRequest;
-	MoveRequest.SetAcceptanceRadius(InstanceData.AcceptanceRadius);
-	MoveRequest.SetAllowPartialPath(InstanceData.bAllowPartialPath);
+	// Try actor first, fall back to location if unreachable
+	EPathFollowingRequestResult::Type Result = EPathFollowingRequestResult::Failed;
 
 	if (bHasTargetActor)
 	{
-		MoveRequest.SetGoalActor(InstanceData.TargetActor);
-	}
-	else
-	{
-		MoveRequest.SetGoalLocation(InstanceData.TargetLocation);
+		Result = InstanceData.Controller->MoveToActor(
+			InstanceData.TargetActor,
+			InstanceData.AcceptanceRadius);
 	}
 
-	const FPathFollowingRequestResult MoveResult =
-		InstanceData.Controller->MoveTo(MoveRequest);
-	const EPathFollowingRequestResult::Type Result = MoveResult.Code;
+	if (Result == EPathFollowingRequestResult::Failed
+		&& InstanceData.TargetLocation != FVector::ZeroVector)
+	{
+		Result = InstanceData.Controller->MoveToLocation(
+			InstanceData.TargetLocation,
+			InstanceData.AcceptanceRadius);
+	}
 
 	if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
 	{
