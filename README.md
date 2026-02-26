@@ -69,7 +69,6 @@ Source/AnimusExMachina/
         AxMTask_Attack.h                             # Placeholder timer-based attack
         AxMTask_LookAround.h                         # Investigation area scanning
         AxMTask_SearchArea.h                         # EQS/NavMesh search pattern
-        AxMTask_DebugState.h                         # In-viewport debug state label
       Conditions/
         AxMCondition_HasTarget.h                     # TargetActor validity check
         AxMCondition_IsInAttackRange.h               # Range bool passthrough
@@ -108,7 +107,6 @@ Content/
 | `FAxMTask_Attack` | Placeholder timer-based attack (M3 will add montage support) |
 | `FAxMTask_LookAround` | Scans area by rotating through focal points over a duration |
 | `FAxMTask_SearchArea` | EQS-driven or random NavMesh search pattern with duration limit |
-| `FAxMTask_DebugState` | Draws a color-coded label above the NPC via `DrawDebugString` (dev builds only) |
 
 ### StateTree Conditions
 

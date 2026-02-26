@@ -18,7 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **State Tasks**:
   - `FAxMTask_LookAround` — Rotates the AI pawn through three focal points (left, right, forward) over a configurable duration then succeeds. Used in Investigate state.
   - `FAxMTask_SearchArea` — Navigates the NPC to successive search points around a center location. Supports EQS-driven queries (assign a `QueryAsset`) or random NavMesh fallback. Tick-based polling chains moves. Succeeds when `SearchDuration` expires.
-  - `FAxMTask_DebugState` — Draws a color-coded label above the NPC's head via `DrawDebugString`. Configurable text, color, and height offset. Zero cost in shipping builds (`ENABLE_DRAW_DEBUG` guard).
 - **Conditions**:
   - `FAxMCondition_IsSuspicious` — Passes through `bIsSuspicious` from the Suspicion global task. Supports `bInvert`.
 - **EQS**:
