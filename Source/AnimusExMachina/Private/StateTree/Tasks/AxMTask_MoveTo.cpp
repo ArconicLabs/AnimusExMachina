@@ -1,8 +1,8 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
-// Navigates the AI pawn to a target actor (continuous follow) or location
-// (one-shot). Completion is fully delegate-driven via OnRequestFinished —
-// no Tick override. See header comment for mode details.
+// Navigates the AI pawn to a target actor or location. Completes with
+// Succeeded on arrival, Failed on path failure. Fully delegate-driven
+// via OnRequestFinished — no Tick override.
 
 #include "StateTree/Tasks/AxMTask_MoveTo.h"
 #include "AnimusExMachina.h"
@@ -49,13 +49,7 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 
 	if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
 	{
-		UE_LOG(LogAxM, Log, TEXT("MoveTo: AlreadyAtGoal — bHasTargetActor=%d"),
-			bHasTargetActor);
-		// continuous follow: at target, state transitions handle next step
-		// one-shot: arrived, complete immediately
-		return bHasTargetActor
-			? EStateTreeRunStatus::Running
-			: EStateTreeRunStatus::Succeeded;
+		return EStateTreeRunStatus::Succeeded;
 	}
 
 	if (Result == EPathFollowingRequestResult::Failed)
@@ -73,33 +67,10 @@ EStateTreeRunStatus FAxMTask_MoveTo::EnterState(
 
 	if (PathComp)
 	{
-		TWeakObjectPtr<AAIController> WeakController = InstanceData.Controller;
-		TWeakObjectPtr<AActor> WeakTarget = InstanceData.TargetActor;
-		float Radius = InstanceData.AcceptanceRadius;
-
 		InstanceData.MoveFinishedHandle = PathComp->OnRequestFinished.AddLambda(
-			[WeakContext = Context.MakeWeakExecutionContext(),
-			 WeakController, WeakTarget, Radius](
+			[WeakContext = Context.MakeWeakExecutionContext()](
 				FAIRequestID RequestID, const FPathFollowingResult& MoveResult)
 			{
-				if (WeakTarget.IsValid() && WeakController.IsValid())
-				{
-					// Continuous follow — re-issue only on non-success
-					// (aborted path, blocked, etc.). On success the NPC
-					// arrived; state transitions handle the next step.
-					//
-					// Re-entrancy safe: if re-issue triggers AlreadyAtGoal,
-					// UE fires this delegate synchronously with Success,
-					// which we don't re-issue on.
-					if (!MoveResult.IsSuccess())
-					{
-						WeakController->MoveToActor(
-							WeakTarget.Get(), Radius);
-					}
-					return;
-				}
-
-				// One-shot — complete the task
 				if (MoveResult.IsSuccess())
 				{
 					WeakContext.FinishTask(
