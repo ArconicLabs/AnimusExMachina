@@ -2,7 +2,7 @@
 
 // StateTree task that searches an area around a center point by navigating
 // to successive EQS-driven (or random NavMesh) points. Succeeds when the
-// search duration expires.
+// search duration timer expires.
 
 #pragma once
 
@@ -43,8 +43,8 @@ struct FAxMTask_SearchAreaInstanceData
 	float AcceptanceRadius = 50.0f;
 
 	// --- Internal state ---
-	float ElapsedTime = 0.0f;
-	bool bIsMoving = false;
+	FDelegateHandle MoveFinishedHandle;
+	FTimerHandle SearchTimerHandle;
 };
 
 USTRUCT(meta = (DisplayName = "AxM Search Area", Category = "AxM|Tasks"))
@@ -62,9 +62,6 @@ struct ANIMUSEXMACHINA_API FAxMTask_SearchArea : public FStateTreeTaskCommonBase
 	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context,
 		const FStateTreeTransitionResult& Transition) const override;
 
-	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context,
-		const float DeltaTime) const override;
-
 	virtual void ExitState(FStateTreeExecutionContext& Context,
 		const FStateTreeTransitionResult& Transition) const override;
 
@@ -73,14 +70,4 @@ struct ANIMUSEXMACHINA_API FAxMTask_SearchArea : public FStateTreeTaskCommonBase
 		const IStateTreeBindingLookup& BindingLookup,
 		EStateTreeNodeFormatting Formatting = EStateTreeNodeFormatting::Text) const override;
 #endif
-
-private:
-
-	/** Pick a random reachable point and issue a MoveTo. Returns true if successful. */
-	bool MoveToRandomPoint(FInstanceDataType& InstanceData,
-		FStateTreeExecutionContext& Context) const;
-
-	/** Run the EQS query and navigate to the best result. */
-	void RunEQSQuery(FInstanceDataType& InstanceData,
-		FStateTreeExecutionContext& Context) const;
 };

@@ -4,10 +4,12 @@
 #include "AnimusExMachina.h"
 #include "AIController.h"
 #include "StateTreeExecutionContext.h"
+#include "StateTreeAsyncExecutionContext.h"
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
 #include "EnvironmentQuery/EnvQueryManager.h"
 #include "EnvironmentQuery/EnvQuery.h"
+#include "TimerManager.h"
 
 EStateTreeRunStatus FAxMTask_SearchArea::EnterState(
 	FStateTreeExecutionContext& Context,
@@ -25,48 +27,147 @@ EStateTreeRunStatus FAxMTask_SearchArea::EnterState(
 		return EStateTreeRunStatus::Failed;
 	}
 
-	InstanceData.ElapsedTime = 0.0f;
-	InstanceData.bIsMoving = false;
+	// start the search duration timer
+	UWorld* World = InstanceData.Controller->GetWorld();
+	if (World)
+	{
+		World->GetTimerManager().SetTimer(
+			InstanceData.SearchTimerHandle,
+			FTimerDelegate::CreateLambda([WeakContext = Context.MakeWeakExecutionContext()]()
+			{
+				WeakContext.FinishTask(EStateTreeFinishTaskType::Succeeded);
+			}),
+			InstanceData.SearchDuration,
+			false
+		);
+	}
+
+	// bind move completion delegate to chain search points
+	UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
+	if (PathComp)
+	{
+		TWeakObjectPtr<AAIController> WeakController = InstanceData.Controller;
+		TWeakObjectPtr<UEnvQuery> WeakQueryAsset = InstanceData.QueryAsset;
+		FVector SearchCenter = InstanceData.SearchCenter;
+		float SearchRadius = InstanceData.SearchRadius;
+		float AcceptanceRadius = InstanceData.AcceptanceRadius;
+
+		InstanceData.MoveFinishedHandle = PathComp->OnRequestFinished.AddLambda(
+			[WeakController, WeakQueryAsset, SearchCenter, SearchRadius, AcceptanceRadius](
+				FAIRequestID RequestID, const FPathFollowingResult& MoveResult)
+			{
+				if (!WeakController.IsValid())
+				{
+					return;
+				}
+
+				AAIController* Controller = WeakController.Get();
+
+				// EQS path: run query, move to result in callback
+				if (WeakQueryAsset.IsValid())
+				{
+					APawn* Pawn = Controller->GetPawn();
+					if (!Pawn)
+					{
+						return;
+					}
+
+					UEnvQueryManager* EQSManager = UEnvQueryManager::GetCurrent(Pawn->GetWorld());
+					if (!EQSManager)
+					{
+						return;
+					}
+
+					FEnvQueryRequest Request(WeakQueryAsset.Get(), Pawn);
+					TWeakObjectPtr<AAIController> InnerWeakController = Controller;
+
+					EQSManager->RunQuery(Request,
+						EEnvQueryRunMode::SingleResult,
+						FQueryFinishedSignature::CreateLambda(
+							[InnerWeakController, AcceptanceRadius](TSharedPtr<FEnvQueryResult> Result)
+							{
+								if (!InnerWeakController.IsValid() || !Result.IsValid() || !Result->IsSuccessful())
+								{
+									return;
+								}
+
+								FVector BestLocation = Result->GetItemAsLocation(0);
+								InnerWeakController->MoveToLocation(BestLocation, AcceptanceRadius);
+							}
+						)
+					);
+					return;
+				}
+
+				// random NavMesh path: pick a random reachable point
+				APawn* Pawn = Controller->GetPawn();
+				if (!Pawn)
+				{
+					return;
+				}
+
+				UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(Pawn->GetWorld());
+				if (!NavSys)
+				{
+					return;
+				}
+
+				FNavLocation ResultLocation;
+				if (NavSys->GetRandomReachablePointInRadius(SearchCenter, SearchRadius, ResultLocation))
+				{
+					Controller->MoveToLocation(ResultLocation.Location, AcceptanceRadius);
+				}
+			}
+		);
+	}
 
 	// kick off the first search point
 	if (InstanceData.QueryAsset)
 	{
-		RunEQSQuery(InstanceData, Context);
+		APawn* Pawn = InstanceData.Controller->GetPawn();
+		if (Pawn)
+		{
+			UEnvQueryManager* EQSManager = UEnvQueryManager::GetCurrent(Pawn->GetWorld());
+			if (EQSManager)
+			{
+				TWeakObjectPtr<AAIController> WeakController = InstanceData.Controller;
+				float AcceptanceRadius = InstanceData.AcceptanceRadius;
+
+				FEnvQueryRequest Request(InstanceData.QueryAsset, Pawn);
+				EQSManager->RunQuery(Request,
+					EEnvQueryRunMode::SingleResult,
+					FQueryFinishedSignature::CreateLambda(
+						[WeakController, AcceptanceRadius](TSharedPtr<FEnvQueryResult> Result)
+						{
+							if (!WeakController.IsValid() || !Result.IsValid() || !Result->IsSuccessful())
+							{
+								return;
+							}
+
+							FVector BestLocation = Result->GetItemAsLocation(0);
+							WeakController->MoveToLocation(BestLocation, AcceptanceRadius);
+						}
+					)
+				);
+			}
+		}
 	}
 	else
 	{
-		MoveToRandomPoint(InstanceData, Context);
-	}
-
-	return EStateTreeRunStatus::Running;
-}
-
-EStateTreeRunStatus FAxMTask_SearchArea::Tick(
-	FStateTreeExecutionContext& Context,
-	const float DeltaTime) const
-{
-	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
-
-	InstanceData.ElapsedTime += DeltaTime;
-
-	if (InstanceData.ElapsedTime >= InstanceData.SearchDuration)
-	{
-		return EStateTreeRunStatus::Succeeded;
-	}
-
-	// when the current move finishes, pick the next search point
-	if (InstanceData.bIsMoving &&
-		InstanceData.Controller->GetMoveStatus() == EPathFollowingStatus::Idle)
-	{
-		InstanceData.bIsMoving = false;
-
-		if (InstanceData.QueryAsset)
+		APawn* Pawn = InstanceData.Controller->GetPawn();
+		if (Pawn)
 		{
-			RunEQSQuery(InstanceData, Context);
-		}
-		else
-		{
-			MoveToRandomPoint(InstanceData, Context);
+			UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(Pawn->GetWorld());
+			if (NavSys)
+			{
+				FNavLocation ResultLocation;
+				if (NavSys->GetRandomReachablePointInRadius(
+					InstanceData.SearchCenter, InstanceData.SearchRadius, ResultLocation))
+				{
+					InstanceData.Controller->MoveToLocation(
+						ResultLocation.Location, InstanceData.AcceptanceRadius);
+				}
+			}
 		}
 	}
 
@@ -82,95 +183,28 @@ void FAxMTask_SearchArea::ExitState(
 		return;
 	}
 
-	const FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 
 	if (InstanceData.Controller)
 	{
+		// clear the search duration timer
+		UWorld* World = InstanceData.Controller->GetWorld();
+		if (World)
+		{
+			World->GetTimerManager().ClearTimer(InstanceData.SearchTimerHandle);
+		}
+
+		// remove move completion delegate
+		UPathFollowingComponent* PathComp = InstanceData.Controller->GetPathFollowingComponent();
+		if (PathComp && InstanceData.MoveFinishedHandle.IsValid())
+		{
+			PathComp->OnRequestFinished.Remove(InstanceData.MoveFinishedHandle);
+			InstanceData.MoveFinishedHandle.Reset();
+		}
+
+		// stop any in-progress movement
 		InstanceData.Controller->StopMovement();
 	}
-}
-
-bool FAxMTask_SearchArea::MoveToRandomPoint(
-	FInstanceDataType& InstanceData,
-	FStateTreeExecutionContext& Context) const
-{
-	APawn* Pawn = InstanceData.Controller->GetPawn();
-	if (!Pawn)
-	{
-		return false;
-	}
-
-	UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(Pawn->GetWorld());
-	if (!NavSys)
-	{
-		return false;
-	}
-
-	FNavLocation ResultLocation;
-	if (!NavSys->GetRandomReachablePointInRadius(
-		InstanceData.SearchCenter, InstanceData.SearchRadius, ResultLocation))
-	{
-		return false;
-	}
-
-	EPathFollowingRequestResult::Type MoveResult =
-		InstanceData.Controller->MoveToLocation(
-			ResultLocation.Location, InstanceData.AcceptanceRadius);
-
-	if (MoveResult == EPathFollowingRequestResult::Failed)
-	{
-		return false;
-	}
-
-	InstanceData.bIsMoving =
-		(MoveResult == EPathFollowingRequestResult::RequestSuccessful);
-
-	return true;
-}
-
-void FAxMTask_SearchArea::RunEQSQuery(
-	FInstanceDataType& InstanceData,
-	FStateTreeExecutionContext& Context) const
-{
-	APawn* Pawn = InstanceData.Controller->GetPawn();
-	if (!Pawn || !InstanceData.QueryAsset)
-	{
-		MoveToRandomPoint(InstanceData, Context);
-		return;
-	}
-
-	UEnvQueryManager* EQSManager = UEnvQueryManager::GetCurrent(Pawn->GetWorld());
-	if (!EQSManager)
-	{
-		MoveToRandomPoint(InstanceData, Context);
-		return;
-	}
-
-	// capture raw controller pointer for the async callback — safe because
-	// ExitState stops movement and the query is non-owning
-	AAIController* Controller = InstanceData.Controller;
-	float Radius = InstanceData.AcceptanceRadius;
-
-	FEnvQueryRequest Request(InstanceData.QueryAsset, Pawn);
-
-	EQSManager->RunQuery(Request,
-		EEnvQueryRunMode::SingleResult,
-		FQueryFinishedSignature::CreateLambda(
-			[Controller, Radius](TSharedPtr<FEnvQueryResult> Result)
-			{
-				if (!IsValid(Controller) || !Result.IsValid() || !Result->IsSuccessful())
-				{
-					return;
-				}
-
-				FVector BestLocation = Result->GetItemAsLocation(0);
-				Controller->MoveToLocation(BestLocation, Radius);
-			}
-		)
-	);
-
-	// assume the EQS callback will issue a move
-	InstanceData.bIsMoving = true;
 }
 
 #if WITH_EDITOR
