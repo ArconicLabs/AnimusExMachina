@@ -1,8 +1,8 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
 // StateTree task that rotates the AI pawn through a sequence of focal
-// points (left, right, forward) to scan the surrounding area. Cycles
-// continuously until the state transitions out.
+// points (left, right, forward) to scan the surrounding area. Succeeds
+// after LookDuration expires.
 
 #pragma once
 
