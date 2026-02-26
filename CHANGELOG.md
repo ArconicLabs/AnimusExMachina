@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Patrol Route**: `AAxMPatrolRoute` — Level-placed actor with a `USplineComponent` defining patrol waypoints. Designers add/move spline control points visually in the editor. Provides `GetPatrolPoints`, `GetNumPatrolPoints`, and `GetPatrolPoint` helpers.
+- **State Tasks**:
+  - `FAxMTask_Patrol` — Navigates the NPC along an assigned patrol route. Delegate-driven waypoint following with configurable wait duration at each point. Supports loop and ping-pong modes. Succeeds immediately if no route is assigned.
+- **Conditions**:
+  - `FAxMCondition_IsOutsideLeash` — Returns true when the NPC has exceeded its leash radius from home. Inputs: `DistanceFromHome` (from Perception), `LeashRadius` (from Config). When `LeashRadius` is 0 the leash is disabled and the condition always returns false. Supports `bInvert`.
+- **Config**: `PatrolWaitDuration` — how long to wait at each patrol waypoint. `LeashRadius` — max distance from home before leash triggers (0 = disabled).
+- **AI Controller**: `PatrolRoute` property (`EditInstanceOnly`) — assign a patrol route per NPC instance in the level.
+
+### Changed
+
+- **AxMTask_Attack**: Replaced timer-only placeholder with montage-driven combat. Accepts `AttackMontage` input (bound from combat sub-StateTree ability nodes). Plays montage and completes via `OnMontageEnded` delegate. Falls back to timer-based behavior when no montage is assigned. Display name updated from "AxM Attack (Placeholder)" to "AxM Attack".
+- **Perception Global Task**: Added `DistanceFromHome` output — computed each tick as the distance between the pawn's current position and its recorded home location.
+- **Config Global Task**: Added `LeashRadius` and `PatrolWaitDuration` outputs — read from the Config Data Asset.
+
+### Added
+
 - **Data Asset**: `UAxMConfig` Primary Data Asset consolidating all archetype tuning parameters — perception ranges, suspicion thresholds, engagement range, movement speeds, search params, and alert state gameplay tags. Assign to an AI Controller to drive all behavior from a single asset.
 - **Global Tasks**:
   - `FAxMGlobalTask_Config` — Reads `UAxMConfig` from the AI Controller and exposes all values as bindable outputs for the rest of the tree. Replaces inline parameter values with data-driven bindings.

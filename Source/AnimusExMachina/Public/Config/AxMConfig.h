@@ -83,6 +83,11 @@ public:
 		meta = (ClampMin = "0", Units = "cm"))
 	float EngagementRange = 200.0f;
 
+	/** Max distance from home before the leash condition triggers (0 = disabled) */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Combat",
+		meta = (ClampMin = "0", Units = "cm"))
+	float LeashRadius = 0.0f;
+
 	// --- Movement ---
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Movement",
@@ -100,6 +105,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Movement",
 		meta = (ClampMin = "0", Units = "cm/s"))
 	float SearchMovementSpeed = 350.0f;
+
+	// --- Patrol ---
+
+	/** How long to wait at each patrol waypoint before moving to the next */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Patrol",
+		meta = (ClampMin = "0", Units = "s"))
+	float PatrolWaitDuration = 2.0f;
 
 	// --- Search ---
 

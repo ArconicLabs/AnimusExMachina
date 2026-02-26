@@ -13,6 +13,7 @@
 #include "GameplayTagContainer.h"
 #include "AxMAIController.generated.h"
 
+class AAxMPatrolRoute;
 class UAxMConfig;
 class UStateTreeAIComponent;
 class UAIPerceptionComponent;
@@ -39,6 +40,10 @@ public:
 	/** Returns the assigned config Data Asset (may be null) */
 	UFUNCTION(BlueprintCallable, Category = "Animus Ex Machina|Config")
 	UAxMConfig* GetConfig() const { return Config; }
+
+	/** Returns the assigned patrol route (may be null) */
+	UFUNCTION(BlueprintCallable, Category = "Animus Ex Machina|Patrol")
+	AAxMPatrolRoute* GetPatrolRoute() const { return PatrolRoute; }
 
 	// --- Alert State ---
 
@@ -104,6 +109,12 @@ protected:
 	/** Optional archetype config — overrides the loose perception properties below when set */
 	UPROPERTY(EditDefaultsOnly, Category = "Animus Ex Machina|Config")
 	TObjectPtr<UAxMConfig> Config;
+
+	// --- Patrol ---
+
+	/** Patrol route assigned to this NPC instance in the level */
+	UPROPERTY(EditInstanceOnly, Category = "Animus Ex Machina|Patrol")
+	TObjectPtr<AAxMPatrolRoute> PatrolRoute;
 
 	// --- Sense toggle flags (fallback when Config is null) ---
 

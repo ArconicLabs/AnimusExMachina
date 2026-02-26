@@ -31,6 +31,18 @@ struct FAxMGlobalTask_ConfigInstanceData
 	UPROPERTY(EditAnywhere, Category = "Output")
 	float EngagementRange = 200.0f;
 
+	/** [Output] Max distance from home before leash triggers (0 = disabled) */
+	UPROPERTY(EditAnywhere, Category = "Output")
+	float LeashRadius = 0.0f;
+
+	// --- Movement ---
+
+	// --- Patrol ---
+
+	/** [Output] How long to wait at each patrol waypoint */
+	UPROPERTY(EditAnywhere, Category = "Output")
+	float PatrolWaitDuration = 2.0f;
+
 	// --- Movement ---
 
 	/** [Output] Movement speed during Patrol state */

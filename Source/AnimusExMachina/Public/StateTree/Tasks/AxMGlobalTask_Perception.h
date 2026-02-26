@@ -36,6 +36,10 @@ struct FAxMGlobalTask_PerceptionInstanceData
 	UPROPERTY(EditAnywhere, Category = "Output")
 	FVector HomeLocation = FVector::ZeroVector;
 
+	/** [Output] Current distance from the NPC's home/spawn location */
+	UPROPERTY(EditAnywhere, Category = "Output")
+	float DistanceFromHome = 0.0f;
+
 	/** [Output] Location of the most recent unconfirmed stimulus (hearing or unknown-source damage) */
 	UPROPERTY(EditAnywhere, Category = "Output")
 	FVector StimulusLocation = FVector::ZeroVector;

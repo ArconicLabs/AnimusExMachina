@@ -34,6 +34,13 @@ EStateTreeRunStatus FAxMGlobalTask_Perception::Tick(
 		return EStateTreeRunStatus::Running;
 	}
 
+	// --- Distance from home ---
+	if (APawn* Pawn = AxMController->GetPawn())
+	{
+		InstanceData.DistanceFromHome = FVector::Distance(
+			Pawn->GetActorLocation(), InstanceData.HomeLocation);
+	}
+
 	// --- Sight (always read) ---
 	InstanceData.TargetActor = AxMController->GetCachedTargetActor();
 	InstanceData.LastKnownLocation = AxMController->GetCachedLastKnownLocation();

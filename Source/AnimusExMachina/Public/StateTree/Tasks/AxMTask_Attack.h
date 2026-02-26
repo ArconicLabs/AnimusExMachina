@@ -1,8 +1,9 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
-// Placeholder attack task that simulates an attack with a configurable
-// duration then succeeds. Will be replaced with montage-driven combat
-// logic in a later milestone.
+// StateTree task that plays an attack animation montage and completes
+// when it ends. Falls back to a timer-based attack when no montage is
+// assigned, allowing combat sub-StateTrees to bind their own montages
+// per ability node.
 
 #pragma once
 
@@ -10,30 +11,38 @@
 #include "StateTreeTaskBase.h"
 #include "AxMTask_Attack.generated.h"
 
+class AAIController;
+class UAnimMontage;
+
 /**
- *  Instance data for the placeholder attack task.
+ *  Instance data for the attack task.
  */
 USTRUCT()
 struct FAxMTask_AttackInstanceData
 {
 	GENERATED_BODY()
 
-	/** Pawn performing the attack (for logging context) */
+	/** AI Controller (needed to get the pawn's AnimInstance) */
 	UPROPERTY(EditAnywhere, Category = "Context")
-	TObjectPtr<APawn> Pawn;
+	TObjectPtr<AAIController> Controller;
 
-	/** Duration of the simulated attack in seconds */
+	/** Montage to play (bound from combat sub-StateTree ability nodes) */
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UAnimMontage> AttackMontage;
+
+	/** Fallback duration when no montage is assigned */
 	UPROPERTY(EditAnywhere, Category = "Parameter", meta = (ClampMin = "0.1", Units = "s"))
 	float AttackDuration = 1.0f;
 
-	/** Internal elapsed time tracker */
+	// --- Internal state ---
 	float ElapsedTime = 0.0f;
+	bool bUsingMontage = false;
 };
 
 /**
- *  Placeholder attack task. Runs for AttackDuration seconds then succeeds.
+ *  Attack task — plays a montage or falls back to timer.
  */
-USTRUCT(meta = (DisplayName = "AxM Attack (Placeholder)", Category = "Animus Ex Machina|Tasks"))
+USTRUCT(meta = (DisplayName = "AxM Attack", Category = "Animus Ex Machina|Tasks"))
 struct ANIMUSEXMACHINA_API FAxMTask_Attack : public FStateTreeTaskCommonBase
 {
 	GENERATED_BODY()
@@ -50,6 +59,9 @@ struct ANIMUSEXMACHINA_API FAxMTask_Attack : public FStateTreeTaskCommonBase
 
 	virtual EStateTreeRunStatus Tick(FStateTreeExecutionContext& Context,
 		const float DeltaTime) const override;
+
+	virtual void ExitState(FStateTreeExecutionContext& Context,
+		const FStateTreeTransitionResult& Transition) const override;
 
 #if WITH_EDITOR
 	virtual FText GetDescription(const FGuid& ID, FStateTreeDataView InstanceDataView,
