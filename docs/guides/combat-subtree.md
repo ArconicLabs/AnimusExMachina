@@ -18,24 +18,25 @@ ST_AxM_Master
 - When the master tree exits Combat (target lost, leash exceeded), the sub-StateTree is interrupted
 - The sub-StateTree does **not** need to check HasTarget — the master tree handles that
 
-## Context Inheritance
+## Passing Data via Parameters
 
-Linked sub-StateTrees automatically inherit the parent's context:
+Linked sub-StateTrees inherit the parent's **schema context** — `AIController` and `Pawn` are available for binding automatically. However, Global Task outputs (`Perception.*`, `TargetTracking.*`) are **not** inherited. The sub-tree must define **Parameters** to receive this data from the master tree.
 
-- `AIController` and `Pawn` are available for binding
-- Global Task outputs (`Perception.*`, `Config.*`, `TargetTracking.*`) are accessible
-- No explicit parameter-passing needed
+!!! warning "No Global Tasks in sub-trees"
+    Do not add Global Tasks to a linked sub-StateTree that uses parameters. This is a known crash vector in UE 5.5. Keep all Global Tasks in the master tree's root state.
 
 The sub-StateTree's Schema must use `StateTreeAIComponentSchema` (same as the master).
 
-### Key Outputs Available in Combat Sub-Trees
+### Parameters for Combat Sub-Trees
 
-| Source | Output | Use |
-|---|---|---|
-| TargetTracking | `DistanceToTarget` | Range-based transitions (close distance, maintain distance) |
-| TargetTracking | `HasLineOfSight` | LOS checks for ranged attacks |
-| Perception | `TargetActor` | Navigation target for MoveTo |
-| Perception | `LastKnownLocation` | Fallback navigation when target is momentarily occluded |
+Define these parameters on the combat sub-StateTree. The master tree's Combat Linked Asset state binds them from its own Global Task outputs.
+
+| Parameter | Type | Bound From (Master Tree) | Use |
+|---|---|---|---|
+| `TargetActor` | `AActor*` | `Perception.TargetActor` | Navigation target for MoveTo, FaceTarget |
+| `LastKnownLocation` | `FVector` | `Perception.LastKnownLocation` | Fallback navigation when target is occluded |
+| `DistanceToTarget` | `float` | `TargetTracking.DistanceToTarget` | Range-based transitions |
+| `HasLineOfSight` | `bool` | `TargetTracking.HasLineOfSight` | LOS checks for ranged attacks |
 
 ---
 
@@ -57,6 +58,12 @@ Root
 1. Right-click in Content Browser → **StateTree → StateTree**
 2. Name it `ST_Combat_Melee`
 3. Set Schema to `StateTreeAIComponentSchema`
+4. Open the **Parameters** panel and add:
+    - `TargetActor` — Object Reference (`AActor`)
+    - `LastKnownLocation` — Vector
+    - `DistanceToTarget` — Float
+    - `HasLineOfSight` — Bool
+5. Do **not** add any Global Tasks to this sub-tree
 
 ### Step 2: CloseDistance (Default State)
 
@@ -65,21 +72,21 @@ Move toward the target until within striking range.
 | Task | Field | Bind To |
 |---|---|---|
 | AxM Move To | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
-| | TargetLocation | `Perception.LastKnownLocation` |
+| | TargetActor | `Parameters.TargetActor` |
+| | TargetLocation | `Parameters.LastKnownLocation` |
 | | AcceptanceRadius | 50.0 |
 | AxM Face Target | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
+| | TargetActor | `Parameters.TargetActor` |
 
 **Transitions:**
 
 | Priority | Trigger | Condition | Target |
 |---|---|---|---|
-| 1 | On Tick | `TargetTracking.DistanceToTarget` **<** `200.0` | → ExecuteAttack |
+| 1 | On Tick | `Parameters.DistanceToTarget` **<** `200.0` | → ExecuteAttack |
 | 2 | On State Completed | — | → CloseDistance (self-transition) |
 
 !!! tip "Distance threshold"
-    The `200.0` value is your melee strike range. Use StateTree's built-in property comparison — bind `DistanceToTarget` from the TargetTracking global task and compare it against a literal float. No custom condition node needed.
+    The `200.0` value is your melee strike range. Use StateTree's built-in property comparison — bind `DistanceToTarget` from Parameters and compare it against a literal float. No custom condition node needed.
 
 ### Step 3: ExecuteAttack
 
@@ -88,7 +95,7 @@ Play the attack montage.
 | Task | Field | Bind To |
 |---|---|---|
 | AxM Face Target | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
+| | TargetActor | `Parameters.TargetActor` |
 | AxM Attack | Controller | `AIController` |
 | | AttackMontage | `AM_MeleeAttack` (your montage asset) |
 | | AttackDuration | 1.0 (timer fallback) |
@@ -119,6 +126,11 @@ Brief pause between attacks. This creates a window the player can exploit.
 2. Select **Combat**
 3. Set state type to **Linked Asset**
 4. Set **Linked StateTree** to `ST_Combat_Melee`
+5. Bind the Linked Asset's parameters:
+    - `TargetActor` ← `Perception.TargetActor`
+    - `LastKnownLocation` ← `Perception.LastKnownLocation`
+    - `DistanceToTarget` ← `TargetTracking.DistanceToTarget`
+    - `HasLineOfSight` ← `TargetTracking.HasLineOfSight`
 
 ---
 
@@ -140,6 +152,12 @@ Root
 1. Right-click in Content Browser → **StateTree → StateTree**
 2. Name it `ST_Combat_Ranged`
 3. Set Schema to `StateTreeAIComponentSchema`
+4. Open the **Parameters** panel and add:
+    - `TargetActor` — Object Reference (`AActor`)
+    - `LastKnownLocation` — Vector
+    - `DistanceToTarget` — Float
+    - `HasLineOfSight` — Bool
+5. Do **not** add any Global Tasks to this sub-tree
 
 ### Step 2: FindPosition (Default State)
 
@@ -148,21 +166,21 @@ Move toward the target but maintain distance. The NPC moves to a position within
 | Task | Field | Bind To |
 |---|---|---|
 | AxM Move To | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
-| | TargetLocation | `Perception.LastKnownLocation` |
+| | TargetActor | `Parameters.TargetActor` |
+| | TargetLocation | `Parameters.LastKnownLocation` |
 | | AcceptanceRadius | 200.0 |
 | AxM Face Target | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
+| | TargetActor | `Parameters.TargetActor` |
 
 **Transitions:**
 
 | Priority | Trigger | Condition | Target |
 |---|---|---|---|
-| 1 | On Tick | `TargetTracking.DistanceToTarget` **<** `1000.0` **AND** `TargetTracking.HasLineOfSight` **==** `true` | → Shoot |
+| 1 | On Tick | `Parameters.DistanceToTarget` **<** `1000.0` **AND** `Parameters.HasLineOfSight` **==** `true` | → Shoot |
 | 2 | On State Completed | — | → FindPosition (self-transition) |
 
 !!! tip "Firing range"
-    The `1000.0` value is your max engagement distance. Bind both `DistanceToTarget` and `HasLineOfSight` from TargetTracking. The NPC only fires when it has a clear shot within range.
+    The `1000.0` value is your max engagement distance. Bind both `DistanceToTarget` and `HasLineOfSight` from Parameters. The NPC only fires when it has a clear shot within range.
 
 ### Step 3: Shoot
 
@@ -171,7 +189,7 @@ Fire at the target.
 | Task | Field | Bind To |
 |---|---|---|
 | AxM Face Target | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
+| | TargetActor | `Parameters.TargetActor` |
 | AxM Attack | Controller | `AIController` |
 | | AttackMontage | `AM_RangedAttack` (your ranged montage) |
 | | AttackDuration | 1.5 (timer fallback) |
@@ -192,8 +210,8 @@ Move to a new position after firing. This prevents the NPC from being a stationa
 | Task | Field | Bind To |
 |---|---|---|
 | AxM Move To | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
-| | TargetLocation | `Perception.LastKnownLocation` |
+| | TargetActor | `Parameters.TargetActor` |
+| | TargetLocation | `Parameters.LastKnownLocation` |
 | | AcceptanceRadius | 100.0 |
 
 **Transitions:**
@@ -211,6 +229,11 @@ Move to a new position after firing. This prevents the NPC from being a stationa
 2. Select **Combat**
 3. Set state type to **Linked Asset**
 4. Set **Linked StateTree** to `ST_Combat_Ranged`
+5. Bind the Linked Asset's parameters:
+    - `TargetActor` ← `Perception.TargetActor`
+    - `LastKnownLocation` ← `Perception.LastKnownLocation`
+    - `DistanceToTarget` ← `TargetTracking.DistanceToTarget`
+    - `HasLineOfSight` ← `TargetTracking.HasLineOfSight`
 
 ---
 
@@ -232,9 +255,9 @@ Set the root's **Selection Behavior** to **Sequential**. Each state transitions 
 
 ```
 Root
-├── HeavyAttack    ← condition: DistanceToTarget < 100
-├── LightAttack    ← condition: DistanceToTarget < 200
-├── CloseDistance   ← condition: DistanceToTarget >= 200
+├── HeavyAttack    ← condition: Parameters.DistanceToTarget < 100
+├── LightAttack    ← condition: Parameters.DistanceToTarget < 200
+├── CloseDistance   ← condition: Parameters.DistanceToTarget >= 200
 └── Cooldown       ← always available (lowest priority)
 ```
 
@@ -245,8 +268,8 @@ Use conditions on each state to evaluate which attack to use based on current ra
 ```
 Root
 ├── CloseDistance       ← when far from target
-├── MeleeAttack        ← condition: DistanceToTarget < 200
-├── ThrowProjectile    ← condition: DistanceToTarget > 500 && HasLineOfSight
+├── MeleeAttack        ← condition: Parameters.DistanceToTarget < 200
+├── ThrowProjectile    ← condition: Parameters.DistanceToTarget > 500 && Parameters.HasLineOfSight
 └── Cooldown
 ```
 
@@ -261,5 +284,6 @@ An NPC with both melee and ranged abilities selects based on distance.
 - **Timer fallback** — Leave `AttackMontage` empty to use the `AttackDuration` timer. Useful for prototyping before montage assets are ready.
 - **Master owns exit transitions** — The sub-StateTree loops indefinitely. The master tree interrupts it when conditions change (target lost, leash exceeded).
 - **One sub-tree per archetype** — Different NPC types reference different combat sub-StateTrees. A melee grunt uses `ST_Combat_Melee`, a ranged archer uses `ST_Combat_Ranged`.
-- **DistanceToTarget for range** — Bind `TargetTracking.DistanceToTarget` in the sub-tree for range-based transitions. Compare against literal floats using StateTree's built-in property comparisons.
+- **DistanceToTarget for range** — Bind `Parameters.DistanceToTarget` in the sub-tree for range-based transitions. Compare against literal floats using StateTree's built-in property comparisons.
+- **No Global Tasks in sub-trees** — Define Parameters instead. The master tree binds its Global Task outputs to the sub-tree's parameters on the Linked Asset state. Adding Global Tasks to a linked sub-tree that also uses parameters can cause editor crashes in UE 5.5.
 - **Anim Notifies for effects** — For gameplay events during montages (damage application, VFX, sound, projectile spawning), use Anim Notifies on the montage asset. The AxM Attack task handles playback; your game code handles effects via standard UE Anim Notify callbacks.
