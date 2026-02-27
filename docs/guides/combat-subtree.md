@@ -1,23 +1,22 @@
 # Combat Sub-StateTree
 
-The master StateTree's **Combat: Engage** state references a linked sub-StateTree that defines the NPC's attack behavior. The master tree handles *when* to fight (perception, range checks, transitions) while the combat sub-StateTree handles *how* to fight (ability selection, montages, cooldowns).
+The master StateTree's **Combat** state references a linked sub-StateTree that defines the NPC's combat behavior. The master tree handles *when* to fight (perception, target acquisition, leash) while the combat sub-StateTree handles *how* to fight — both **positioning** (closing distance, finding cover, repositioning) and **abilities** (attacks, cooldowns, reloads).
 
 ## How It Works
 
 ```
 ST_AxM_Master
-  └─ Combat: Engage
-       └─ Linked → ST_Combat_Melee  (user-built, replaceable)
-                    ├─ LightAttack  → [AxM Attack, montage = AM_LightAttack]
-                    ├─ HeavyAttack  → [AxM Attack, montage = AM_HeavyAttack]
-                    └─ Cooldown     → [Delay, 1.0s]
+  └─ Combat (Linked → ST_Combat_Melee or ST_Combat_Ranged)
+       ├─ Positioning  → [MoveTo, FaceTarget]
+       ├─ Attack       → [AxM Attack with montage]
+       └─ Cooldown     → [Delay]
 ```
 
-- The master tree enters Engage when `IsInEngagementRange == true`
-- Execution transfers into the linked sub-StateTree
-- The sub-StateTree runs autonomously — selecting abilities, playing montages
-- When the master tree exits Engage (target lost, out of range, leash), the sub-StateTree is interrupted
-- The sub-StateTree does **not** need to check HasTarget or IsInRange
+- The master tree enters Combat when `HasTarget == true`
+- Execution transfers into the linked combat sub-StateTree
+- The sub-StateTree runs autonomously — handling movement, attacks, cooldowns
+- When the master tree exits Combat (target lost, leash exceeded), the sub-StateTree is interrupted
+- The sub-StateTree does **not** need to check HasTarget — the master tree handles that
 
 ## Context Inheritance
 
@@ -29,9 +28,29 @@ Linked sub-StateTrees automatically inherit the parent's context:
 
 The sub-StateTree's Schema must use `StateTreeAIComponentSchema` (same as the master).
 
+### Key Outputs Available in Combat Sub-Trees
+
+| Source | Output | Use |
+|---|---|---|
+| TargetTracking | `DistanceToTarget` | Range-based transitions (close distance, maintain distance) |
+| TargetTracking | `HasLineOfSight` | LOS checks for ranged attacks |
+| Perception | `TargetActor` | Navigation target for MoveTo |
+| Perception | `LastKnownLocation` | Fallback navigation when target is momentarily occluded |
+
 ---
 
-## Building a Sample Combat Tree
+## Sample: Melee Combat (`ST_Combat_Melee`)
+
+A melee NPC that closes distance, attacks, then pauses before re-engaging.
+
+### State Hierarchy
+
+```
+Root
+├── CloseDistance (default)    ← move toward target
+├── ExecuteAttack              ← play attack montage
+└── Cooldown                   ← brief pause
+```
 
 ### Step 1: Create the Asset
 
@@ -39,100 +58,208 @@ The sub-StateTree's Schema must use `StateTreeAIComponentSchema` (same as the ma
 2. Name it `ST_Combat_Melee`
 3. Set Schema to `StateTreeAIComponentSchema`
 
-### Step 2: State Hierarchy
+### Step 2: CloseDistance (Default State)
 
-```
-Root
-└── ChooseAttack         ← default entry (selector)
-    ├── LightAttack
-    ├── HeavyAttack
-    └── Cooldown
-```
+Move toward the target until within striking range.
 
-Set `ChooseAttack`'s **Selection Behavior** to **Random**.
-
-!!! tip "Selection Behavior"
-    **Random** gives variety. **Sequential** gives predictable combos. **Utility** lets you weight attacks based on distance, health, etc.
-
-### Step 3: LightAttack
-
-| Task | Field | Value |
+| Task | Field | Bind To |
 |---|---|---|
+| AxM Move To | Controller | `AIController` |
+| | TargetActor | `Perception.TargetActor` |
+| | TargetLocation | `Perception.LastKnownLocation` |
+| | AcceptanceRadius | 50.0 |
+| AxM Face Target | Controller | `AIController` |
+| | TargetActor | `Perception.TargetActor` |
+
+**Transitions:**
+
+| Priority | Trigger | Condition | Target |
+|---|---|---|---|
+| 1 | On Tick | `TargetTracking.DistanceToTarget` **<** `200.0` | → ExecuteAttack |
+| 2 | On State Completed | — | → CloseDistance (self-transition) |
+
+!!! tip "Distance threshold"
+    The `200.0` value is your melee strike range. Use StateTree's built-in property comparison — bind `DistanceToTarget` from the TargetTracking global task and compare it against a literal float. No custom condition node needed.
+
+### Step 3: ExecuteAttack
+
+Play the attack montage.
+
+| Task | Field | Bind To |
+|---|---|---|
+| AxM Face Target | Controller | `AIController` |
+| | TargetActor | `Perception.TargetActor` |
 | AxM Attack | Controller | `AIController` |
-| | AttackMontage | `AM_LightAttack` |
-| | AttackDuration | 0.8 (fallback) |
+| | AttackMontage | `AM_MeleeAttack` (your montage asset) |
+| | AttackDuration | 1.0 (timer fallback) |
 
-Transition: **On State Completed** → ChooseAttack
+**Transitions:**
 
-### Step 4: HeavyAttack
+| Priority | Trigger | Condition | Target |
+|---|---|---|---|
+| 1 | On State Completed | — | → Cooldown |
 
-| Task | Field | Value |
-|---|---|---|
-| AxM Attack | Controller | `AIController` |
-| | AttackMontage | `AM_HeavyAttack` |
-| | AttackDuration | 1.5 (fallback) |
+### Step 4: Cooldown
 
-Transition: **On State Completed** → ChooseAttack
-
-### Step 5: Cooldown
+Brief pause between attacks. This creates a window the player can exploit.
 
 | Task | Field | Value |
 |---|---|---|
-| StateTree Delay | Duration | 1.0 |
+| StateTree Delay | Duration | 0.5 |
 
-Transition: **On State Completed** → ChooseAttack
+**Transitions:**
 
-### Step 6: Link to Master Tree
+| Priority | Trigger | Condition | Target |
+|---|---|---|---|
+| 1 | On State Completed | — | → CloseDistance |
+
+### Step 5: Link to Master Tree
 
 1. Open `ST_AxM_Master`
-2. Select **Combat: Engage**
+2. Select **Combat**
 3. Set state type to **Linked**
 4. Set **Linked StateTree** to `ST_Combat_Melee`
 
 ---
 
-## Variations
+## Sample: Ranged Combat (`ST_Combat_Ranged`)
 
-### Sequential Combo
+A ranged NPC that finds a firing position, shoots, then repositions.
+
+### State Hierarchy
 
 ```
-ChooseAttack (Sequential)
+Root
+├── FindPosition (default)    ← move to firing position
+├── Shoot                      ← play ranged attack
+└── Reposition                 ← move to new position
+```
+
+### Step 1: Create the Asset
+
+1. Right-click in Content Browser → **StateTree → StateTree**
+2. Name it `ST_Combat_Ranged`
+3. Set Schema to `StateTreeAIComponentSchema`
+
+### Step 2: FindPosition (Default State)
+
+Move toward the target but maintain distance. The NPC moves to a position within firing range.
+
+| Task | Field | Bind To |
+|---|---|---|
+| AxM Move To | Controller | `AIController` |
+| | TargetActor | `Perception.TargetActor` |
+| | TargetLocation | `Perception.LastKnownLocation` |
+| | AcceptanceRadius | 200.0 |
+| AxM Face Target | Controller | `AIController` |
+| | TargetActor | `Perception.TargetActor` |
+
+**Transitions:**
+
+| Priority | Trigger | Condition | Target |
+|---|---|---|---|
+| 1 | On Tick | `TargetTracking.DistanceToTarget` **<** `1000.0` **AND** `TargetTracking.HasLineOfSight` **==** `true` | → Shoot |
+| 2 | On State Completed | — | → FindPosition (self-transition) |
+
+!!! tip "Firing range"
+    The `1000.0` value is your max engagement distance. Bind both `DistanceToTarget` and `HasLineOfSight` from TargetTracking. The NPC only fires when it has a clear shot within range.
+
+### Step 3: Shoot
+
+Fire at the target.
+
+| Task | Field | Bind To |
+|---|---|---|
+| AxM Face Target | Controller | `AIController` |
+| | TargetActor | `Perception.TargetActor` |
+| AxM Attack | Controller | `AIController` |
+| | AttackMontage | `AM_RangedAttack` (your ranged montage) |
+| | AttackDuration | 1.5 (timer fallback) |
+
+**Transitions:**
+
+| Priority | Trigger | Condition | Target |
+|---|---|---|---|
+| 1 | On State Completed | — | → Reposition |
+
+!!! note "Projectile spawning"
+    The AxM Attack task handles montage playback. To spawn a projectile, add an **Anim Notify** on the montage at the fire frame. Your game code handles the projectile spawn via standard UE Anim Notify callbacks — the plugin doesn't need to know about it.
+
+### Step 4: Reposition
+
+Move to a new position after firing. This prevents the NPC from being a stationary target.
+
+| Task | Field | Bind To |
+|---|---|---|
+| AxM Move To | Controller | `AIController` |
+| | TargetActor | `Perception.TargetActor` |
+| | TargetLocation | `Perception.LastKnownLocation` |
+| | AcceptanceRadius | 100.0 |
+
+**Transitions:**
+
+| Priority | Trigger | Condition | Target |
+|---|---|---|---|
+| 1 | On State Completed | — | → FindPosition |
+
+!!! tip "Advanced repositioning"
+    For smarter repositioning, replace the basic MoveTo with an EQS query that finds cover points or flanking positions. Create a custom state task that runs an EQS query and navigates to the best result.
+
+### Step 5: Link to Master Tree
+
+1. Open `ST_AxM_Master`
+2. Select **Combat**
+3. Set state type to **Linked**
+4. Set **Linked StateTree** to `ST_Combat_Ranged`
+
+---
+
+## Variations
+
+### Sequential Melee Combo
+
+```
+Root (Sequential selection)
 ├── LightAttack    ← first hit
 ├── LightAttack    ← second hit
 ├── HeavyAttack    ← finisher
 └── Cooldown       ← recovery
 ```
 
-A predictable 3-hit combo with a cooldown window the player can exploit.
-
-### Ranged Combat
-
-```
-ChooseAttack (Random)
-├── FireProjectile  → [custom task: spawn projectile]
-├── Reload          → [AxM Attack with reload montage]
-└── Reposition      → [AxM Move To with EQS cover point]
-```
-
-Ranged enemies can include movement between shots.
+Set the root's **Selection Behavior** to **Sequential**. Each state transitions to the next on completion, creating a predictable combo pattern the player can learn.
 
 ### Utility-Based Selection
 
 ```
-ChooseAttack (Utility)
+Root
 ├── HeavyAttack    ← condition: DistanceToTarget < 100
 ├── LightAttack    ← condition: DistanceToTarget < 200
-└── Cooldown       ← always available (lowest weight)
+├── CloseDistance   ← condition: DistanceToTarget >= 200
+└── Cooldown       ← always available (lowest priority)
 ```
 
-The NPC prefers heavy attacks at close range.
+Use conditions on each state to evaluate which attack to use based on current range. Closer = heavier attacks.
+
+### Mixed Melee + Ranged
+
+```
+Root
+├── CloseDistance       ← when far from target
+├── MeleeAttack        ← condition: DistanceToTarget < 200
+├── ThrowProjectile    ← condition: DistanceToTarget > 500 && HasLineOfSight
+└── Cooldown
+```
+
+An NPC with both melee and ranged abilities selects based on distance.
 
 ---
 
 ## Key Points
 
-- **Montage per state** — Each ability sets its own `AttackMontage` on the AxM Attack task. The montage never passes to the master tree.
+- **Positioning in the sub-tree** — The combat sub-StateTree owns both movement and abilities. The master tree only decides *whether* to fight, not *how*.
+- **Montage per state** — Each ability state sets its own `AttackMontage` on the AxM Attack task. Different attacks use different montages.
 - **Timer fallback** — Leave `AttackMontage` empty to use the `AttackDuration` timer. Useful for prototyping before montage assets are ready.
-- **Master owns transitions** — The sub-StateTree loops indefinitely. The master tree interrupts it when conditions change.
+- **Master owns exit transitions** — The sub-StateTree loops indefinitely. The master tree interrupts it when conditions change (target lost, leash exceeded).
 - **One sub-tree per archetype** — Different NPC types reference different combat sub-StateTrees. A melee grunt uses `ST_Combat_Melee`, a ranged archer uses `ST_Combat_Ranged`.
-- **Anim Notifies** — For gameplay events during montages (damage application, VFX, sound), use Anim Notifies on the montage asset. The AxM Attack task handles playback; your game code handles effects via standard UE Anim Notify callbacks.
+- **DistanceToTarget for range** — Bind `TargetTracking.DistanceToTarget` in the sub-tree for range-based transitions. Compare against literal floats using StateTree's built-in property comparisons.
+- **Anim Notifies for effects** — For gameplay events during montages (damage application, VFX, sound, projectile spawning), use Anim Notifies on the montage asset. The AxM Attack task handles playback; your game code handles effects via standard UE Anim Notify callbacks.
