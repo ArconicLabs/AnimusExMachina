@@ -129,7 +129,7 @@ Transition: **On State Completed** → ScanArea (self-transition, loops until pa
 
 ## Combat State
 
-Set the state type to **Linked** and reference a [combat sub-StateTree](combat-subtree.md). The combat sub-StateTree owns both positioning (closing distance, finding cover) and abilities (attacks, cooldowns).
+Set the state type to **Linked Asset** and reference a [combat sub-StateTree](combat-subtree.md). The combat sub-StateTree owns both positioning (closing distance, finding cover) and abilities (attacks, cooldowns).
 
 !!! tip "Prototyping without a sub-StateTree"
     For quick prototyping, you can use the AxM Attack task directly instead of linking a sub-StateTree. Add AxM Move To + AxM Face Target + AxM Attack as tasks, and set a self-transition on State Completed. Replace with a linked sub-StateTree when you're ready to build proper combat behavior.

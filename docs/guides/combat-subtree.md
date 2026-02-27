@@ -117,7 +117,7 @@ Brief pause between attacks. This creates a window the player can exploit.
 
 1. Open `ST_AxM_Master`
 2. Select **Combat**
-3. Set state type to **Linked**
+3. Set state type to **Linked Asset**
 4. Set **Linked StateTree** to `ST_Combat_Melee`
 
 ---
@@ -209,7 +209,7 @@ Move to a new position after firing. This prevents the NPC from being a stationa
 
 1. Open `ST_AxM_Master`
 2. Select **Combat**
-3. Set state type to **Linked**
+3. Set state type to **Linked Asset**
 4. Set **Linked StateTree** to `ST_Combat_Ranged`
 
 ---
