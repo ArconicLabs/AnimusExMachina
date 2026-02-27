@@ -40,7 +40,6 @@ Add all four to the root state's **Global Tasks** list:
 | Field | Bind To |
 |---|---|
 | Controller (Context) | `AIController` |
-| EngagementRange (Output) | — available for binding |
 | LeashRadius (Output) | — available for binding |
 | PatrolWaitDuration (Output) | — available for binding |
 | All movement speeds (Output) | — available for binding |
@@ -53,10 +52,8 @@ Add all four to the root state's **Global Tasks** list:
 |---|---|
 | Controller (Context) | `AIController` |
 | TargetActor (Input) | `Perception.TargetActor` |
-| EngagementRange (Parameter) | 150.0 (or bind from Config) |
 | DistanceToTarget (Output) | — available for binding |
 | HasLineOfSight (Output) | — available for binding |
-| IsInEngagementRange (Output) | — available for binding |
 
 ---
 
@@ -71,9 +68,7 @@ Root: Alive
 ├── [Search]            ← parent state
 │   ├── [GoToLastKnown] ← default child
 │   └── [SearchArea]
-└── [Combat]            ← parent state
-    ├── [Pursue]        ← default child
-    └── [Engage]
+└── [Combat]            ← linked sub-StateTree
 ```
 
 ---
@@ -132,49 +127,19 @@ Transition: **On State Completed** → ScanArea (self-transition, loops until pa
 
 ---
 
-## Combat State (Parent)
+## Combat State
 
-**Transitions (apply to all children):**
+Set the state type to **Linked** and reference a [combat sub-StateTree](combat-subtree.md). The combat sub-StateTree owns both positioning (closing distance, finding cover) and abilities (attacks, cooldowns).
+
+!!! tip "Prototyping without a sub-StateTree"
+    For quick prototyping, you can use the AxM Attack task directly instead of linking a sub-StateTree. Add AxM Move To + AxM Face Target + AxM Attack as tasks, and set a self-transition on State Completed. Replace with a linked sub-StateTree when you're ready to build proper combat behavior.
+
+**Transitions:**
 
 | Priority | Trigger | Condition | Target |
 |---|---|---|---|
 | 1 | On Tick | **Has Target** (bInvert = true) | → Search |
 | 2 | On Tick | **Is Outside Leash** (DistanceFromHome ← `Perception.DistanceFromHome`, LeashRadius ← `Config.LeashRadius`) | → Patrol |
-
-### Pursue (Default Child)
-
-| Task | Field | Bind To |
-|---|---|---|
-| AxM Move To | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
-| | TargetLocation | `Perception.LastKnownLocation` |
-| | AcceptanceRadius | 50.0 |
-| AxM Face Target | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
-
-| Priority | Trigger | Condition | Target |
-|---|---|---|---|
-| 1 | On Tick | **Is In Engagement Range** | → Engage |
-| 2 | On State Completed | — | → Pursue (self-transition) |
-
-### Engage
-
-Set the state type to **Linked** and reference a [combat sub-StateTree](combat-subtree.md).
-
-Alternatively, use the AxM Attack task directly:
-
-| Task | Field | Bind To |
-|---|---|---|
-| AxM Face Target | Controller | `AIController` |
-| | TargetActor | `Perception.TargetActor` |
-| AxM Attack | Controller | `AIController` |
-| | AttackMontage | Your montage asset (or leave empty) |
-| | AttackDuration | 1.0 (fallback) |
-
-| Priority | Trigger | Condition | Target |
-|---|---|---|---|
-| 1 | On Tick | **Is In Engagement Range** (bInvert = true) | → Pursue |
-| 2 | On State Completed | — | → Engage (self-transition) |
 
 ---
 
@@ -217,14 +182,13 @@ Transition: **On State Completed** → Patrol
 ```
 Perception.TargetActor ──────┬──→ TargetTracking.TargetActor
                              ├──→ HasTarget conditions
-                             ├──→ MoveTo.TargetActor (Pursue)
-                             └──→ FaceTarget.TargetActor (Pursue + Engage)
+                             └──→ MoveTo.TargetActor (combat sub-tree, GoToLastKnown)
 
 Perception.HearingStrength ──→ Suspicion.HearingStrength
 
 Perception.StimulusLocation ──→ MoveTo.TargetLocation (GoToStimulus)
 
-Perception.LastKnownLocation ─┬─→ MoveTo.TargetLocation (Pursue, GoToLastKnown)
+Perception.LastKnownLocation ─┬─→ MoveTo.TargetLocation (GoToLastKnown)
                               └──→ SearchArea.SearchCenter
 
 Perception.DistanceFromHome ──→ IsOutsideLeash.DistanceFromHome
@@ -234,5 +198,6 @@ Config.PatrolWaitDuration ──→ Patrol.WaitDuration
 
 Suspicion.bIsSuspicious ──→ IsSuspicious conditions
 
-TargetTracking.IsInEngagementRange ──→ IsInEngagementRange conditions
+TargetTracking.DistanceToTarget ──→ Combat sub-StateTree (positioning decisions)
+TargetTracking.HasLineOfSight ──→ Combat sub-StateTree (LOS checks)
 ```
