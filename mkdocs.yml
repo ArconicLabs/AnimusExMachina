@@ -1,0 +1,61 @@
+site_name: Animus Ex Machina
+site_description: Drop-in StateTree AI plugin for Unreal Engine 5
+site_url: https://arconiclabs.github.io/AnimusExMachina/
+repo_url: https://github.com/ArconicLabs/AnimusExMachina
+repo_name: ArconicLabs/AnimusExMachina
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - tables
+  - attr_list
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quick-start.md
+  - Guides:
+    - StateTree Setup: guides/statetree-setup.md
+    - Combat Sub-StateTree: guides/combat-subtree.md
+    - Patrol Routes: guides/patrol-routes.md
+    - Leash System: guides/leash-system.md
+  - Reference:
+    - Architecture: reference/architecture.md
+    - API Reference: reference/api.md
+    - Configuration: reference/configuration.md
+  - Changelog: changelog.md
