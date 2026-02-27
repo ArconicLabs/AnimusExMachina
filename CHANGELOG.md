@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **EngagementRange**: Removed from `UAxMConfig`, Config Global Task, and TargetTracking Global Task. The concept of a master-tree engagement threshold is replaced by per-archetype combat sub-StateTrees that own their own positioning logic.
+- **IsInEngagementRange condition**: `FAxMCondition_IsInEngagementRange` deleted. Combat sub-StateTrees use `DistanceToTarget` directly for positioning decisions.
+
+### Changed
+
+- **Combat state**: Simplified from Pursue/Engage child states to a single linked sub-StateTree state. The combat sub-StateTree now owns both positioning (closing distance, finding cover) and abilities (attacks, cooldowns). This gives designers full control over combat behavior per archetype.
+- **TargetTracking Global Task**: Outputs reduced to `DistanceToTarget` and `HasLineOfSight`. The `EngagementRange` parameter and `IsInEngagementRange` output have been removed. Combat sub-StateTrees bind `DistanceToTarget` directly for range-based transitions.
+
 ### Added
 
 - **Patrol Route**: `AAxMPatrolRoute` — Level-placed actor with a `USplineComponent` defining patrol waypoints. Designers add/move spline control points visually in the editor. Provides `GetPatrolPoints`, `GetNumPatrolPoints`, and `GetPatrolPoint` helpers.
@@ -25,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Data Asset**: `UAxMConfig` Primary Data Asset consolidating all archetype tuning parameters — perception ranges, suspicion thresholds, engagement range, movement speeds, search params, and alert state gameplay tags. Assign to an AI Controller to drive all behavior from a single asset.
+- **Data Asset**: `UAxMConfig` Primary Data Asset consolidating all archetype tuning parameters — perception ranges, suspicion thresholds, movement speeds, search params, and alert state gameplay tags. Assign to an AI Controller to drive all behavior from a single asset.
 - **Global Tasks**:
   - `FAxMGlobalTask_Config` — Reads `UAxMConfig` from the AI Controller and exposes all values as bindable outputs for the rest of the tree. Replaces inline parameter values with data-driven bindings.
 - **State Tasks**:
@@ -34,19 +44,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Config` property — optional `UAxMConfig` Data Asset that overrides loose perception properties when assigned.
   - `SetAlertState` / `GetAlertState` — tracks current alert state as a `FGameplayTag` and applies movement speed from Config.
   - Event delegates: `OnTargetAcquired`, `OnTargetLost`, `OnAlertStateChanged` — `BlueprintAssignable` multicast delegates for game code integration.
-- **Conditions**:
-  - `FAxMCondition_IsInEngagementRange` — Replaces `IsInAttackRange`. Passes through a bound `IsInEngagementRange` bool. Supports `bInvert`.
 - Module dependency: `GameplayTags`.
 
 ### Changed
 
-- **EngagementRange**: Renamed `AttackRange` to `EngagementRange` throughout (TargetTracking global task parameter and output, condition). Engagement range is archetype-level (when the NPC enters combat); per-attack ranges live in combat sub-StateTrees.
+- ~~**EngagementRange**: Renamed `AttackRange` to `EngagementRange`~~ — subsequently removed; combat sub-StateTrees own positioning logic directly.
 - **AI Controller**: Perception parameters now optionally read from `UAxMConfig` Data Asset in `PostInitializeComponents`. Loose UPROPERTY fields remain as fallback when no Config is assigned. Sight perception handler fires `OnTargetAcquired`/`OnTargetLost` delegates on target transitions.
 - **Categories**: Renamed all UPROPERTY/USTRUCT categories from `AxM|...` to `Animus Ex Machina|...` to prevent Unreal editor camelCase splitting.
-- **ST_AxM_Master**: Renamed from `ST_AxM_Sample` to reflect its role as the shared master StateTree template. Added explicit self-transitions on Pursue and Engage states so combat tasks re-execute continuously via the StateTree rather than internal looping.
+- **ST_AxM_Master**: Renamed from `ST_AxM_Sample` to reflect its role as the shared master StateTree template. Combat is a single linked sub-StateTree state (Pursue/Engage split removed).
 - **AxMTask_MoveTo**: Simplified to a single-outcome task — issues one move request and reports Succeeded or Failed. `AlreadyAtGoal` returns `Succeeded` unconditionally. Delegate is a straightforward `FinishTask` reporter with no re-issuing. `ExitState` removes delegate before `StopMovement` to prevent cleanup-triggered callbacks. Continuous following is now the StateTree's responsibility via self-transitions. `MoveToActor` now falls back to `MoveToLocation` (bound `TargetLocation`) when the actor's position is unreachable (e.g. off-navmesh).
 - **AxMTask_SearchArea**: Replaced Tick-based polling with fully delegate-driven approach. Move chaining uses `OnRequestFinished` delegate; search duration uses `FTimerHandle` instead of manual elapsed time accumulation. `Tick` override removed entirely.
-- **AxMTask_Attack**: Returns `Succeeded` after `AttackDuration` expires. Continuous attacking is the StateTree's responsibility via self-transitions on the Engage state.
+- **AxMTask_Attack**: Returns `Succeeded` after `AttackDuration` expires. Continuous attacking is the combat sub-StateTree's responsibility via self-transitions.
 - **AxMTask_LookAround**: Returns `Succeeded` after `LookDuration` expires. Continuous scanning is the StateTree's responsibility via self-transitions on the ScanArea state.
 
 ### Added
@@ -75,17 +83,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **AI Controller**: `AAxMAIController` with `UStateTreeAIComponent` and `UAIPerceptionComponent` (sight sense). Caches perception results via `OnTargetPerceptionUpdated` delegate for event-driven target acquisition.
 - **Global Tasks**:
   - `FAxMGlobalTask_Perception` — Reads cached perception data from the AI Controller. Outputs `TargetActor`, `LastKnownLocation`, and `HomeLocation`.
-  - `FAxMGlobalTask_TargetTracking` — Computes `DistanceToTarget`, `HasLineOfSight`, and `IsInEngagementRange` from a bound `TargetActor`.
+  - `FAxMGlobalTask_TargetTracking` — Computes `DistanceToTarget` and `HasLineOfSight` from a bound `TargetActor`.
 - **State Tasks**:
   - `FAxMTask_MoveTo` — Navigates to a target actor or location. Uses `PathFollowingComponent::OnRequestFinished` delegate for async completion.
   - `FAxMTask_FaceTarget` — Rotates the AI pawn to face a target actor via the AIController focus system.
   - `FAxMTask_Attack` — Placeholder attack task that runs for a configurable duration then succeeds.
 - **Conditions**:
   - `FAxMCondition_HasTarget` — Returns true when a bound `TargetActor` is valid. Supports `bInvert`.
-  - `FAxMCondition_IsInEngagementRange` — Passes through a bound `IsInEngagementRange` bool. Supports `bInvert`.
 - **Content**:
   - `BP_AxM_AIController` — Sample AI Controller blueprint.
-  - `ST_AxM_Master` — Pre-wired master StateTree template (Patrol → Pursue ↔ Engage with global perception and target tracking).
+  - `ST_AxM_Master` — Pre-wired master StateTree template (Patrol → Combat with global perception and target tracking).
   - `BP_AxM_SampleNPC` — Sample NPC character with Animation Blueprint and movement configured for AI (Use Acceleration for Paths enabled).
   - `Lvl_AxM_SampleThirdPerson` — Test level with NavMesh for AI navigation.
 - `LogAxM` log category for plugin-wide logging.
