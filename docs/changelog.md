@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Combat sub-StateTree data flow**: Sub-trees now receive combat data via StateTree Parameters instead of Global Task output inheritance. The master tree's Combat Linked Asset state binds `TargetActor`, `LastKnownLocation`, `DistanceToTarget`, and `HasLineOfSight` as parameters. Documentation corrected to reflect this requirement.
 - **Combat state**: Simplified from Pursue/Engage child states to a single linked sub-StateTree state. The combat sub-StateTree now owns both positioning and abilities.
 - **TargetTracking Global Task**: Outputs reduced to `DistanceToTarget` and `HasLineOfSight`.
 

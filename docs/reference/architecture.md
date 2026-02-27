@@ -60,7 +60,7 @@ Every Task, Global Task, and Condition can be subclassed in Blueprint or C++:
 
 ### Custom Global Tasks
 
-Add project-specific Global Tasks to the root state. Their output properties automatically become available for binding throughout the tree, including within linked sub-StateTrees.
+Add project-specific Global Tasks to the root state. Their output properties become available for binding throughout the master tree. Linked sub-StateTrees receive Global Task data via **Parameters** bound on the Linked Asset state — they do not inherit Global Task outputs automatically.
 
 ### Event Delegates
 
