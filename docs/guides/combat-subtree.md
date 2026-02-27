@@ -22,6 +22,11 @@ ST_AxM_Master
 
 Linked sub-StateTrees inherit the parent's **schema context** — `AIController` and `Pawn` are available for binding automatically. However, Global Task outputs (`Perception.*`, `TargetTracking.*`) are **not** inherited. The sub-tree must define **Parameters** to receive this data from the master tree.
 
+This is a two-step process:
+
+1. **Sub-tree**: Define parameters (names and types) in the sub-tree's Parameters panel. Bind tasks and conditions to these parameters.
+2. **Master tree**: Select the Combat state → the Linked Asset's parameters appear in the **Details panel**. Bind each one to the master tree's Global Task outputs.
+
 !!! warning "No Global Tasks in sub-trees"
     Do not add Global Tasks to a linked sub-StateTree that uses parameters. This is a known crash vector in UE 5.5. Keep all Global Tasks in the master tree's root state.
 
@@ -29,7 +34,7 @@ The sub-StateTree's Schema must use `StateTreeAIComponentSchema` (same as the ma
 
 ### Parameters for Combat Sub-Trees
 
-Define these parameters on the combat sub-StateTree. The master tree's Combat Linked Asset state binds them from its own Global Task outputs.
+Define these parameters on the combat sub-StateTree. Then in the master tree, select the Combat state and bind each parameter from the Linked Asset's Details panel.
 
 | Parameter | Type | Bound From (Master Tree) | Use |
 |---|---|---|---|
@@ -126,7 +131,7 @@ Brief pause between attacks. This creates a window the player can exploit.
 2. Select **Combat**
 3. Set state type to **Linked Asset**
 4. Set **Linked StateTree** to `ST_Combat_Melee`
-5. Bind the Linked Asset's parameters:
+5. With the Combat state selected, the sub-tree's parameters appear in the **Details panel**. Bind each one:
     - `TargetActor` ← `Perception.TargetActor`
     - `LastKnownLocation` ← `Perception.LastKnownLocation`
     - `DistanceToTarget` ← `TargetTracking.DistanceToTarget`
@@ -229,7 +234,7 @@ Move to a new position after firing. This prevents the NPC from being a stationa
 2. Select **Combat**
 3. Set state type to **Linked Asset**
 4. Set **Linked StateTree** to `ST_Combat_Ranged`
-5. Bind the Linked Asset's parameters:
+5. With the Combat state selected, the sub-tree's parameters appear in the **Details panel**. Bind each one:
     - `TargetActor` ← `Perception.TargetActor`
     - `LastKnownLocation` ← `Perception.LastKnownLocation`
     - `DistanceToTarget` ← `TargetTracking.DistanceToTarget`
