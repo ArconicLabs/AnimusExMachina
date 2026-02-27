@@ -1,7 +1,7 @@
 // Copyright ArconicLabs. All Rights Reserved.
 
 // Global StateTree task that computes derived targeting data (distance,
-// line of sight, engagement range) from a TargetActor reference.
+// line of sight) from a TargetActor reference.
 
 #pragma once
 
@@ -27,10 +27,6 @@ struct FAxMGlobalTask_TargetTrackingInstanceData
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<AActor> TargetActor;
 
-	/** Engagement range threshold — distance at which the NPC enters combat */
-	UPROPERTY(EditAnywhere, Category = "Parameter", meta = (ClampMin = "0", Units = "cm"))
-	float EngagementRange = 200.0f;
-
 	/** [Output] Distance from the NPC to TargetActor */
 	UPROPERTY(EditAnywhere, Category = "Output")
 	float DistanceToTarget = 0.0f;
@@ -38,15 +34,11 @@ struct FAxMGlobalTask_TargetTrackingInstanceData
 	/** [Output] Whether the NPC has unobstructed line of sight to TargetActor */
 	UPROPERTY(EditAnywhere, Category = "Output")
 	bool HasLineOfSight = false;
-
-	/** [Output] Whether TargetActor is within EngagementRange */
-	UPROPERTY(EditAnywhere, Category = "Output")
-	bool IsInEngagementRange = false;
 };
 
 /**
- *  Global StateTree task that computes DistanceToTarget, HasLineOfSight,
- *  and IsInEngagementRange from TargetActor. Runs every tick on the root state.
+ *  Global StateTree task that computes DistanceToTarget and HasLineOfSight
+ *  from TargetActor. Runs every tick on the root state.
  */
 USTRUCT(meta = (DisplayName = "AxM Target (Global)", Category = "Animus Ex Machina|Global"))
 struct ANIMUSEXMACHINA_API FAxMGlobalTask_TargetTracking : public FStateTreeTaskCommonBase

@@ -78,11 +78,6 @@ public:
 
 	// --- Combat ---
 
-	/** Distance at which the NPC enters combat engagement (not per-attack range) */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Combat",
-		meta = (ClampMin = "0", Units = "cm"))
-	float EngagementRange = 200.0f;
-
 	/** Max distance from home before the leash condition triggers (0 = disabled) */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animus Ex Machina|Combat",
 		meta = (ClampMin = "0", Units = "cm"))

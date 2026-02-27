@@ -27,10 +27,6 @@ struct FAxMGlobalTask_ConfigInstanceData
 
 	// --- Combat ---
 
-	/** [Output] Distance at which the NPC enters combat engagement */
-	UPROPERTY(EditAnywhere, Category = "Output")
-	float EngagementRange = 200.0f;
-
 	/** [Output] Max distance from home before leash triggers (0 = disabled) */
 	UPROPERTY(EditAnywhere, Category = "Output")
 	float LeashRadius = 0.0f;

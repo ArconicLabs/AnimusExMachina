@@ -14,7 +14,6 @@ EStateTreeRunStatus FAxMGlobalTask_TargetTracking::Tick(
 	{
 		InstanceData.DistanceToTarget = 0.0f;
 		InstanceData.HasLineOfSight = false;
-		InstanceData.IsInEngagementRange = false;
 		return EStateTreeRunStatus::Running;
 	}
 
@@ -30,8 +29,6 @@ EStateTreeRunStatus FAxMGlobalTask_TargetTracking::Tick(
 
 	InstanceData.HasLineOfSight = InstanceData.Controller->LineOfSightTo(
 		InstanceData.TargetActor);
-
-	InstanceData.IsInEngagementRange = InstanceData.DistanceToTarget <= InstanceData.EngagementRange;
 
 	return EStateTreeRunStatus::Running;
 }

@@ -27,7 +27,6 @@ EStateTreeRunStatus FAxMGlobalTask_Config::EnterState(
 	}
 
 	// Copy all values from the Data Asset to bindable outputs
-	InstanceData.EngagementRange = ConfigAsset->EngagementRange;
 	InstanceData.LeashRadius = ConfigAsset->LeashRadius;
 	InstanceData.PatrolWaitDuration = ConfigAsset->PatrolWaitDuration;
 	InstanceData.PatrolMovementSpeed = ConfigAsset->PatrolMovementSpeed;
