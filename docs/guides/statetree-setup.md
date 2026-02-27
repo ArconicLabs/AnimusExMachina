@@ -131,6 +131,15 @@ Transition: **On State Completed** → ScanArea (self-transition, loops until pa
 
 Set the state type to **Linked Asset** and reference a [combat sub-StateTree](combat-subtree.md). The combat sub-StateTree owns both positioning (closing distance, finding cover) and abilities (attacks, cooldowns).
 
+**Parameter Bindings:** The sub-tree receives data from the master tree's Global Tasks via parameters on the Linked Asset:
+
+| Sub-Tree Parameter | Bind From |
+|---|---|
+| `TargetActor` | `Perception.TargetActor` |
+| `LastKnownLocation` | `Perception.LastKnownLocation` |
+| `DistanceToTarget` | `TargetTracking.DistanceToTarget` |
+| `HasLineOfSight` | `TargetTracking.HasLineOfSight` |
+
 !!! tip "Prototyping without a sub-StateTree"
     For quick prototyping, you can use the AxM Attack task directly instead of linking a sub-StateTree. Add AxM Move To + AxM Face Target + AxM Attack as tasks, and set a self-transition on State Completed. Replace with a linked sub-StateTree when you're ready to build proper combat behavior.
 
@@ -182,14 +191,16 @@ Transition: **On State Completed** → Patrol
 ```
 Perception.TargetActor ──────┬──→ TargetTracking.TargetActor
                              ├──→ HasTarget conditions
-                             └──→ MoveTo.TargetActor (combat sub-tree, GoToLastKnown)
+                             ├──→ MoveTo.TargetActor (GoToLastKnown)
+                             └──→ Combat Linked Asset → Parameters.TargetActor
 
 Perception.HearingStrength ──→ Suspicion.HearingStrength
 
 Perception.StimulusLocation ──→ MoveTo.TargetLocation (GoToStimulus)
 
 Perception.LastKnownLocation ─┬─→ MoveTo.TargetLocation (GoToLastKnown)
-                              └──→ SearchArea.SearchCenter
+                              ├──→ SearchArea.SearchCenter
+                              └──→ Combat Linked Asset → Parameters.LastKnownLocation
 
 Perception.DistanceFromHome ──→ IsOutsideLeash.DistanceFromHome
 
@@ -198,6 +209,6 @@ Config.PatrolWaitDuration ──→ Patrol.WaitDuration
 
 Suspicion.bIsSuspicious ──→ IsSuspicious conditions
 
-TargetTracking.DistanceToTarget ──→ Combat sub-StateTree (positioning decisions)
-TargetTracking.HasLineOfSight ──→ Combat sub-StateTree (LOS checks)
+TargetTracking.DistanceToTarget ──→ Combat Linked Asset → Parameters.DistanceToTarget
+TargetTracking.HasLineOfSight ──→ Combat Linked Asset → Parameters.HasLineOfSight
 ```
