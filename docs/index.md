@@ -30,17 +30,16 @@ AIController (modular senses: sight, hearing, damage)
     └── StateTree
         ├── Global: Perception     → TargetActor, LastKnownLocation, DistanceFromHome
         ├── Global: Suspicion      → SuspicionLevel, bIsSuspicious
-        ├── Global: TargetTracking → DistanceToTarget, HasLineOfSight, IsInEngagementRange
-        ├── Global: Config         → EngagementRange, LeashRadius, PatrolWaitDuration, ...
+        ├── Global: TargetTracking → DistanceToTarget, HasLineOfSight
+        ├── Global: Config         → LeashRadius, PatrolWaitDuration, ...
         │
         ├── Patrol ──[HasTarget]──→ Combat
         │           ──[IsSuspicious]──→ Investigate
         ├── Investigate ──[HasTarget]──→ Combat
         │                ──[!IsSuspicious]──→ Patrol
-        ├── Combat ──[!HasTarget]──→ Search
+        ├── Combat (Linked → combat sub-StateTree)
+        │          ──[!HasTarget]──→ Search
         │          ──[IsOutsideLeash]──→ Patrol
-        │   ├── Pursue ──[IsInRange]──→ Engage
-        │   └── Engage ──[!IsInRange]──→ Pursue
         └── Search ──[HasTarget]──→ Combat
                    ──[IsOutsideLeash]──→ Patrol
                    ──[SearchComplete]──→ Patrol

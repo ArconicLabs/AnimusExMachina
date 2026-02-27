@@ -11,7 +11,7 @@ The plugin follows a layered architecture. Perception is the senses, the StateTr
 | **StateTree** | Decision logic. Hierarchical states with event-driven transitions. | `ST_AxM_Master` |
 | **Global Tasks** | Persistent tasks computing derived data (target tracking, suspicion, config). Expose bindable outputs. | `FAxMGlobalTask_*` |
 | **State Tasks** | Leaf-level execution: MoveTo, Attack, Patrol, Search, LookAround. | `FAxMTask_*` |
-| **Conditions** | Transition guards: HasTarget, IsInRange, IsSuspicious, IsOutsideLeash. | `FAxMCondition_*` |
+| **Conditions** | Transition guards: HasTarget, IsSuspicious, IsOutsideLeash. | `FAxMCondition_*` |
 | **Data Assets** | Per-archetype tuning. Designers create new assets, no code changes. | `UAxMConfig` |
 
 ## Data Flow
@@ -23,11 +23,11 @@ AAxMAIController (caches per-sense results)
     ↓
 FAxMGlobalTask_Perception (reads cache → outputs TargetActor, LastKnownLocation, etc.)
     ↓
-FAxMGlobalTask_TargetTracking (computes distance, LOS, range checks)
+FAxMGlobalTask_TargetTracking (computes distance, LOS)
 FAxMGlobalTask_Suspicion (accumulates/decays suspicion from hearing)
 FAxMGlobalTask_Config (reads UAxMConfig → outputs all tuning values)
     ↓
-Conditions (HasTarget, IsInRange, IsSuspicious, IsOutsideLeash)
+Conditions (HasTarget, IsSuspicious, IsOutsideLeash)
     ↓
 State transitions → Tasks execute (MoveTo, Attack, Patrol, Search)
 ```
@@ -47,7 +47,7 @@ The plugin uses a **delegate-driven perception** model with **modular senses**:
 
 Key states expose **linked sub-StateTree slots**. Designers compose behavior visually without touching C++:
 
-- **Combat: Engage** → Link a combat sub-StateTree for attack sequences
+- **Combat** → Link a combat sub-StateTree for positioning and attack sequences
 - **Patrol** → The Patrol task handles waypoint navigation; custom idle behaviors can be added as additional tasks
 
 ### Subclassing
@@ -88,7 +88,7 @@ Source/AnimusExMachina/
       Tasks/
         AxMGlobalTask_Perception.h             # Multi-sense target acquisition
         AxMGlobalTask_Suspicion.h              # Suspicion accumulation and decay
-        AxMGlobalTask_TargetTracking.h         # Distance, LOS, range computation
+        AxMGlobalTask_TargetTracking.h         # Distance, LOS computation
         AxMGlobalTask_Config.h                 # Config value exposure
         AxMTask_MoveTo.h                       # Navigation via PathFollowing delegate
         AxMTask_FaceTarget.h                   # Focus-based rotation
@@ -98,7 +98,6 @@ Source/AnimusExMachina/
         AxMTask_SearchArea.h                   # EQS/NavMesh search pattern
       Conditions/
         AxMCondition_HasTarget.h               # TargetActor validity check
-        AxMCondition_IsInEngagementRange.h     # Range bool passthrough
         AxMCondition_IsSuspicious.h            # Suspicion threshold check
         AxMCondition_IsOutsideLeash.h          # Leash distance check
   Private/

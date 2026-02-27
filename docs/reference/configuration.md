@@ -46,7 +46,6 @@ All NPC tuning is centralized in the `UAxMConfig` Primary Data Asset. Create one
 
 | Parameter | Type | Default | Units | Description |
 |---|---|---|---|---|
-| `EngagementRange` | float | 200.0 | cm | Distance for entering combat engagement |
 | `LeashRadius` | float | 0.0 | cm | Max chase distance from home (0 = disabled) |
 
 ### Patrol
@@ -89,7 +88,6 @@ These are `FGameplayTag` fields — assign tags from your project's hierarchy. T
 | Parameter | Value |
 |---|---|
 | SightRadius | 2000 |
-| EngagementRange | 150 |
 | CombatMovementSpeed | 600 |
 | LeashRadius | 0 (no leash — chases forever) |
 | PatrolWaitDuration | 1.0 |
@@ -99,7 +97,6 @@ These are `FGameplayTag` fields — assign tags from your project's hierarchy. T
 | Parameter | Value |
 |---|---|
 | SightRadius | 3000 |
-| EngagementRange | 800 |
 | CombatMovementSpeed | 300 |
 | LeashRadius | 2500 |
 | SearchDuration | 15.0 |

@@ -97,10 +97,8 @@ Computes derived target data when a target exists.
 |---|---|---|---|
 | Controller | Context | `AAIController*` | AI Controller for LOS traces |
 | TargetActor | Input | `AActor*` | Bind from Perception output |
-| EngagementRange | Parameter | `float` | Distance threshold (default 200 cm) |
 | DistanceToTarget | Output | `float` | Current distance to target |
 | HasLineOfSight | Output | `bool` | Clear LOS to target |
-| IsInEngagementRange | Output | `bool` | Distance < EngagementRange |
 
 ### FAxMGlobalTask_Config
 
@@ -109,7 +107,6 @@ Reads `UAxMConfig` from the AI Controller and exposes all values as outputs.
 | Field | Category | Type | Description |
 |---|---|---|---|
 | Controller | Context | `AAIController*` | AI Controller to read Config from |
-| EngagementRange | Output | `float` | Combat engagement distance |
 | LeashRadius | Output | `float` | Max distance from home (0 = disabled) |
 | PatrolWaitDuration | Output | `float` | Wait time at each patrol waypoint |
 | PatrolMovementSpeed | Output | `float` | Speed during Patrol |
@@ -213,15 +210,6 @@ Returns true when `TargetActor` is valid (non-null).
 | Field | Category | Type |
 |---|---|---|
 | TargetActor | Input | `AActor*` |
-| bInvert | Parameter | `bool` |
-
-### FAxMCondition_IsInEngagementRange
-
-Passes through a bound boolean from TargetTracking.
-
-| Field | Category | Type |
-|---|---|---|
-| bIsInEngagementRange | Input | `bool` |
 | bInvert | Parameter | `bool` |
 
 ### FAxMCondition_IsSuspicious
